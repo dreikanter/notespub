@@ -1,0 +1,25 @@
+<h1 class="!my-8 !leading-tight"><a href="/{{.Note.PublicPath}}" class="no-underline">{{.Note.Title}}</a></h1>
+
+{{.Note.Body}}
+
+{{if .Note.Tags}}
+  <hr class="!my-8">
+  <div class="flex flex-row flex-wrap items-stretch !my-8">
+    {{range .Note.Tags}}
+      <a href="/tags/{{.}}" class="block border rounded-md py-0 px-2 my-1 mr-2 no-underline font-normal bg-slate-100 !text-slate-800 border-slate-200">{{.}}</a>
+    {{end}}
+  </div>
+{{end}}
+
+{{if .Related}}
+  <hr class="!my-8">
+  <p>Somewhat related:</p>
+  <ul>
+    {{range .Related}}
+      <li>
+        <a href="/{{.PublicPath}}">{{.Title}}</a>
+        <small class="text-slate-400"><time datetime="{{.PublishedAt.Format "2006-01-02"}}">{{.PublishedAt.Format "2006/01/02"}}</time></small>
+      </li>
+    {{end}}
+  </ul>
+{{end}}

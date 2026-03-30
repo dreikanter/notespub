@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="author" content="{{.Config.AuthorName}}">
+  <meta name="description" content="{{.Page.MetaDescription}}" />
+  <title>{{if .Page.Title}}{{.Page.Title}} - {{end}}{{.Config.SiteName}}</title>
+  {{if .Page.CanonicalPath}}
+    <link rel="canonical" href="{{.Config.SiteRootURL}}{{.Page.CanonicalPath}}">
+  {{end}}
+  <link rel="alternate" type="application/rss+xml" title="{{.Config.SiteName}}" href="{{.Config.FeedURL}}">
+  <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCI+CiAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNDgiIGZpbGw9IiM0YTkwZTIiLz4KICA8cGF0aCBkPSJNMjUgNTAgTDc1IDUwIE03NSA1MCBMNTcgMzIgTTc1IDUwIEw1NyA2OCIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIxMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBmaWxsPSJub25lIi8+Cjwvc3ZnPg==">
+  <link href="/style.css" rel="stylesheet" type="text/css">
+  <script src="https://cdn.counter.dev/script.js" data-id="d94a1231-14bd-47f9-ad32-cf1a9b40d2a5" data-utcoffset="2"></script>
+</head>
+<body>
+  <div class="prose prose-slate lg:prose-lg prose-h1:text-4xl prose-headings:font-semibold prose-a:text-sky-800 container mx-auto !px-4 !py-4">
+    <nav class="!my-8">
+      <a href="{{.Config.SiteRootPath}}">{{.Config.SiteName}}</a>
+    </nav>
+    <main>
+      {{.Content}}
+    </main>
+    <footer>
+      <hr class="!my-8">
+      <p class="not-prose text-slate-400">
+        {{if .Page.PublishedAt}}<time datetime="{{.Page.PublishedAtISO}}">{{.Page.PublishedAtFormatted}}</time> &middot; {{end}}<a href="{{.Config.FeedPath}}">RSS</a>
+      </p>
+    </footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>{{.Config.SiteName}}</title>
+    <link>{{.Config.SiteRootURL}}</link>
+    <atom:link href="{{.Config.FeedURL}}" rel="self" type="application/rss+xml" />
+    <description></description>
+    {{range .NotePages}}
+    <item>
+      <title>{{.Title}}</title>
+      <link>{{.URL}}</link>
+      <guid>{{.UID}}</guid>
+      <description><![CDATA[{{.Body}}]]></description>
+    </item>
+    {{end}}
+  </channel>
+</rss>
