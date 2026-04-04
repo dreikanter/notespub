@@ -74,17 +74,6 @@ func resolveConfigPath(flagValue, notespubPath string) string {
 func loadConfig(cmd *cobra.Command, cfgPath string) (config.Config, error) {
 	cfgPath = resolveConfigPath(cfgPath, os.Getenv("NOTESPUB_PATH"))
 
-	envKeys := []string{
-		"NOTES_PATH", "NOTESPUB_ASSETS_PATH", "NOTESPUB_BUILD_PATH",
-		"NOTESPUB_SITE_ROOT_URL", "NOTESPUB_SITE_NAME", "NOTESPUB_AUTHOR_NAME",
-	}
-	envOverrides := make(map[string]string)
-	for _, key := range envKeys {
-		if v := os.Getenv(key); v != "" {
-			envOverrides[key] = v
-		}
-	}
-
 	flagNames := []string{"notes-path", "assets-path", "out", "url", "site-name", "author"}
 	flagOverrides := make(map[string]string)
 	for _, name := range flagNames {
@@ -94,7 +83,7 @@ func loadConfig(cmd *cobra.Command, cfgPath string) (config.Config, error) {
 		}
 	}
 
-	return config.Load(cfgPath, envOverrides, flagOverrides)
+	return config.Load(cfgPath, flagOverrides)
 }
 
 func expandHome(path string) string {

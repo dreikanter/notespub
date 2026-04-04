@@ -29,20 +29,20 @@ site_name: "My Notes"
 author_name: "Your Name"
 ```
 
-All values can be overridden with environment variables or CLI flags:
+All values can be overridden with CLI flags:
 
-| YAML key | Env var | CLI flag |
-|---|---|---|
-| `notes_path` | `NOTES_PATH` | `--notes-path` |
-| `assets_path` | `NOTESPUB_ASSETS_PATH` | `--assets-path` |
-| `build_path` | `NOTESPUB_BUILD_PATH` | `--out` |
-| `site_root_url` | `NOTESPUB_SITE_ROOT_URL` | `--url` |
-| `site_name` | `NOTESPUB_SITE_NAME` | `--site-name` |
-| `author_name` | `NOTESPUB_AUTHOR_NAME` | `--author` |
+| YAML key | CLI flag |
+|---|---|
+| `notes_path` | `--notes-path` |
+| `assets_path` | `--assets-path` |
+| `build_path` | `--out` |
+| `site_root_url` | `--url` |
+| `site_name` | `--site-name` |
+| `author_name` | `--author` |
 
-Priority: CLI flags > environment variables > YAML file.
+Priority: CLI flags > YAML file.
 
-The config file path defaults to `notespub.yml` in the current directory. Override it with `--config` or the `NOTESPUB_CONFIG` env var.
+The config file path defaults to `notespub.yml` in the current directory. Override it with `--config` or set `NOTESPUB_PATH` to the directory containing the config file.
 
 ## Usage
 

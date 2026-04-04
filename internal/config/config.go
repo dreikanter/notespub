@@ -55,9 +55,8 @@ func (c Config) FeedPath() string {
 	return root + "/feed.xml"
 }
 
-// Load reads configuration from a YAML file, then overlays environment variables,
-// then overlays flag values.
-func Load(yamlPath string, envOverrides map[string]string, flagOverrides map[string]string) (Config, error) {
+// Load reads configuration from a YAML file, then overlays flag values.
+func Load(yamlPath string, flagOverrides map[string]string) (Config, error) {
 	data, err := os.ReadFile(yamlPath)
 	if err != nil {
 		return Config{}, fmt.Errorf("cannot read config: %w", err)
@@ -66,20 +65,6 @@ func Load(yamlPath string, envOverrides map[string]string, flagOverrides map[str
 	var cfg Config
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
 		return Config{}, fmt.Errorf("cannot parse config: %w", err)
-	}
-
-	envMap := map[string]*string{
-		"NOTES_PATH":             &cfg.NotesPath,
-		"NOTESPUB_ASSETS_PATH":   &cfg.AssetsPath,
-		"NOTESPUB_BUILD_PATH":    &cfg.BuildPath,
-		"NOTESPUB_SITE_ROOT_URL": &cfg.SiteRootURL,
-		"NOTESPUB_SITE_NAME":     &cfg.SiteName,
-		"NOTESPUB_AUTHOR_NAME":   &cfg.AuthorName,
-	}
-	for envKey, ptr := range envMap {
-		if v, ok := envOverrides[envKey]; ok && v != "" {
-			*ptr = v
-		}
 	}
 
 	flagMap := map[string]*string{
