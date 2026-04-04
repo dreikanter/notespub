@@ -42,7 +42,7 @@ All values can be overridden with CLI flags:
 
 Priority: CLI flags > YAML file.
 
-The config file path defaults to `notespub.yml` in the current directory. Override it with `--config` or set `NOTESPUB_PATH` to the directory containing the config file.
+The config file path defaults to `notespub.yml` in the current directory. Override it with `--config` or `NOTESPUB_CONFIG` env var.
 
 ## Usage
 
