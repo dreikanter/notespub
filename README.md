@@ -9,61 +9,66 @@ A static site builder for Markdown notes. Reads notes from a local directory, re
 
 ## Build
 
+Install dependencies and build:
+
 ```sh
 npm install
 make build
 ```
 
-This compiles the Tailwind CSS stylesheet and builds the `notespub` binary.
+`npm install` is only needed once (or when dependencies change). `make build` compiles the Tailwind CSS stylesheet and builds the `notespub` binary.
 
 ## Configuration
 
 Create a `notespub.yml` file:
 
 ```yaml
-notes_path: "~/Notes"
-build_path: "./dist"
-assets_path: "~/NotesImages"
+notes_path: "~/notes"
+build_path: "dist"
 site_root_url: "https://example.com"
 site_name: "My Notes"
-author_name: "Your Name"
+author_name: "Ada Lovelace"
 ```
 
 All values can be overridden with CLI flags:
 
 | YAML key | CLI flag |
 |---|---|
-| `notes_path` | `--notes-path` |
-| `assets_path` | `--assets-path` |
+| `notes_path` | `--notes` |
+| `assets_path` | `--assets` |
 | `build_path` | `--out` |
 | `static_path` | `--static` |
 | `site_root_url` | `--url` |
 | `site_name` | `--site-name` |
 | `author_name` | `--author` |
 
-Priority: CLI flags > YAML file.
+Priority: CLI flags > YAML config.
 
-The config file path defaults to `notespub.yml` in the current directory. Override it with `--config` or `NOTESPUB_CONFIG` env var.
+The config file defaults to `notespub.yml` in the current directory. Override with `--config` or `NOTESPUB_CONFIG` env var.
 
-## Static files
+### Image assets
 
-Files in the `static` subdirectory of `notes_path` are copied as-is to the build output root. Use this for files like `CNAME`, `robots.txt`, or `favicon.ico`. Override the location with `static_path` in the config or `--static` flag.
+Downloaded images are cached in an assets directory, organized by note UID. By default this is the `images` subdirectory of `notes_path`. Override with `assets_path` in the config or `--assets` flag.
+
+### Static files
+
+Files in the `static` subdirectory of `notes_path` are copied as-is to the build output root. Use this for `CNAME`, `robots.txt`, `favicon.ico`, etc. Override with `static_path` in the config or `--static` flag.
 
 ## Usage
 
 Build the site:
 
 ```sh
-./notespub build
+notespub build
 ```
 
 Serve locally:
 
 ```sh
-./notespub serve
+notespub serve
 ```
 
-The `serve` command starts a local HTTP server on port 4000 (override with `--port`), serving from `./dist` (override with `--dir`).
+The `serve` command starts a local HTTP server on port 4000 (override with `--port`), serving from `dist` (override with `--dir`).
 
 ## Notes format
 

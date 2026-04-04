@@ -62,7 +62,7 @@ author_name: "Test Author"
 	}
 
 	flagOverrides := map[string]string{
-		"notes-path": "/flag/notes",
+		"notes": "/flag/notes",
 	}
 
 	cfg, err := Load(yamlPath, flagOverrides)
@@ -88,6 +88,31 @@ notes_path: "/tmp/notes"
 	_, err = Load(yamlPath, nil)
 	if err == nil {
 		t.Fatal("Load() expected error for missing required fields, got nil")
+	}
+}
+
+func TestAssetsPathDefaultsToNotesImages(t *testing.T) {
+	dir := t.TempDir()
+	yamlPath := filepath.Join(dir, DefaultConfigFile)
+	err := os.WriteFile(yamlPath, []byte(`
+notes_path: "/tmp/notes"
+build_path: "./dist"
+site_root_url: "https://example.com"
+site_name: "Test Site"
+author_name: "Test Author"
+`), 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := Load(yamlPath, nil)
+	if err != nil {
+		t.Fatalf("Load() error: %v", err)
+	}
+
+	want := filepath.Join("/tmp/notes", "images")
+	if cfg.AssetsPath != want {
+		t.Errorf("AssetsPath = %q, want %q", cfg.AssetsPath, want)
 	}
 }
 
