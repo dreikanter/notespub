@@ -42,6 +42,19 @@ func (c Config) SiteRootPath() string {
 	return p
 }
 
+// SiteDomain returns the domain (host) component of SiteRootURL.
+func (c Config) SiteDomain() string {
+	idx := strings.Index(c.SiteRootURL, "://")
+	if idx < 0 {
+		return c.SiteRootURL
+	}
+	rest := c.SiteRootURL[idx+3:]
+	if slash := strings.IndexByte(rest, '/'); slash >= 0 {
+		return rest[:slash]
+	}
+	return rest
+}
+
 // FeedURL returns the full feed URL.
 func (c Config) FeedURL() string {
 	return strings.TrimRight(c.SiteRootURL, "/") + c.FeedPath()

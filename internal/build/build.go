@@ -31,6 +31,7 @@ type layoutData struct {
 // configData is the subset of config passed to templates.
 type configData struct {
 	SiteName     string
+	SiteDomain   string
 	SiteRootURL  string
 	SiteRootPath string
 	AuthorName   string
@@ -269,6 +270,7 @@ func Build(cfg config.Config, templateFS fs.FS, styleCSS []byte) error {
 
 	cfgData := configData{
 		SiteName:     cfg.SiteName,
+		SiteDomain:   cfg.SiteDomain(),
 		SiteRootURL:  cfg.SiteRootURL,
 		SiteRootPath: cfg.SiteRootPath(),
 		AuthorName:   cfg.AuthorName,
