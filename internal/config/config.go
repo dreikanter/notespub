@@ -87,6 +87,9 @@ func Load(yamlPath string, flagOverrides map[string]string) (Config, error) {
 	cfg.AssetsPath = expandHome(cfg.AssetsPath)
 	cfg.BuildPath = expandHome(cfg.BuildPath)
 	cfg.StaticPath = expandHome(cfg.StaticPath)
+	if cfg.StaticPath == "" && cfg.NotesPath != "" {
+		cfg.StaticPath = filepath.Join(cfg.NotesPath, "static")
+	}
 
 	if cfg.SiteRootURL == "" {
 		return Config{}, fmt.Errorf("site_root_url is required")

@@ -126,8 +126,11 @@ func cleanBuildDir(buildPath string) error {
 }
 
 // copyStaticFiles copies all files from staticPath to buildPath, preserving
-// directory structure.
+// directory structure. Returns nil if staticPath does not exist.
 func copyStaticFiles(staticPath, buildPath string) error {
+	if _, err := os.Stat(staticPath); os.IsNotExist(err) {
+		return nil
+	}
 	return filepath.WalkDir(staticPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
