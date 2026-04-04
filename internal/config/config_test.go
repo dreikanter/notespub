@@ -116,6 +116,54 @@ author_name: "Test Author"
 	}
 }
 
+func TestBuildPathDefaultsToDist(t *testing.T) {
+	dir := t.TempDir()
+	yamlPath := filepath.Join(dir, DefaultConfigFile)
+	err := os.WriteFile(yamlPath, []byte(`
+notes_path: "/tmp/notes"
+site_root_url: "https://example.com"
+site_name: "Test Site"
+author_name: "Test Author"
+`), 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := Load(yamlPath, nil)
+	if err != nil {
+		t.Fatalf("Load() error: %v", err)
+	}
+
+	if cfg.BuildPath != "./dist" {
+		t.Errorf("BuildPath = %q, want ./dist", cfg.BuildPath)
+	}
+}
+
+func TestNotesPathDefaultsToEnvVar(t *testing.T) {
+	dir := t.TempDir()
+	yamlPath := filepath.Join(dir, DefaultConfigFile)
+	err := os.WriteFile(yamlPath, []byte(`
+build_path: "./dist"
+site_root_url: "https://example.com"
+site_name: "Test Site"
+author_name: "Test Author"
+`), 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Setenv("NOTES_PATH", "/env/notes")
+
+	cfg, err := Load(yamlPath, nil)
+	if err != nil {
+		t.Fatalf("Load() error: %v", err)
+	}
+
+	if cfg.NotesPath != "/env/notes" {
+		t.Errorf("NotesPath = %q, want /env/notes", cfg.NotesPath)
+	}
+}
+
 func TestExpandHomePath(t *testing.T) {
 	dir := t.TempDir()
 	yamlPath := filepath.Join(dir, DefaultConfigFile)
