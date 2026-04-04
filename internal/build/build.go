@@ -37,6 +37,8 @@ type configData struct {
 	AuthorName   string
 	FeedURL      string
 	FeedPath     string
+	LicenseName  string
+	LicenseURL   string
 	HighlightCSS template.CSS
 }
 
@@ -276,6 +278,8 @@ func Build(cfg config.Config, templateFS fs.FS, styleCSS []byte) error {
 		AuthorName:   cfg.AuthorName,
 		FeedURL:      cfg.FeedURL(),
 		FeedPath:     cfg.FeedPath(),
+		LicenseName:  cfg.LicenseName,
+		LicenseURL:   cfg.LicenseURL,
 		HighlightCSS: template.CSS(render.HighlightCSS()),
 	}
 

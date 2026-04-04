@@ -77,7 +77,7 @@ func resolveConfigPath(flagValue, envValue string) string {
 func loadConfig(cmd *cobra.Command, cfgPath string) (config.Config, error) {
 	cfgPath = resolveConfigPath(cfgPath, os.Getenv("NOTESPUB_CONFIG"))
 
-	flagNames := []string{"notes", "assets", "out", "static", "url", "site-name", "author"}
+	flagNames := []string{"notes", "assets", "out", "static", "url", "site-name", "author", "license-name", "license-url"}
 	flagOverrides := make(map[string]string)
 	for _, name := range flagNames {
 		if cmd.Flags().Changed(name) {
@@ -114,6 +114,8 @@ func init() {
 	buildCmd.Flags().String("url", "", "site root URL")
 	buildCmd.Flags().String("site-name", "", "site name")
 	buildCmd.Flags().String("author", "", "author name")
+	buildCmd.Flags().String("license-name", "", "license name (default: CC BY 4.0)")
+	buildCmd.Flags().String("license-url", "", "license URL (default: https://creativecommons.org/licenses/by/4.0/)")
 
 	serveCmd.Flags().String("dir", "./dist", "directory to serve")
 	serveCmd.Flags().String("port", "4000", "port to listen on")

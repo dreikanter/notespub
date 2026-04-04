@@ -41,6 +41,10 @@ All values can be overridden with CLI flags:
 | `site_root_url` | `--url` |
 | `site_name` | `--site-name` |
 | `author_name` | `--author` |
+| `license_name` | `--license-name` |
+| `license_url` | `--license-url` |
+
+`license_name` and `license_url` default to "CC BY 4.0" and `https://creativecommons.org/licenses/by/4.0/`.
 
 Priority: CLI flags > YAML config.
 
