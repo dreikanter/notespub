@@ -127,9 +127,9 @@ func Build(cfg config.Config, templateFS fs.FS, styleCSS []byte) error {
 
 	for _, pn := range publicNotes {
 		uid := pn.note.Date + "_" + pn.note.ID
-		slug := slugify(pn.fm.Slug)
+		slug := slugify(trimQuotes(pn.fm.Slug))
 		if slug == "" {
-			slug = slugify(pn.fm.Title)
+			slug = slugify(trimQuotes(pn.fm.Title))
 		}
 		if slug == "" {
 			slug = pn.note.ID
@@ -139,9 +139,9 @@ func Build(cfg config.Config, templateFS fs.FS, styleCSS []byte) error {
 			UID:         uid,
 			ShortUID:    pn.note.ID,
 			Slug:        slug,
-			Title:       cleanTitle(pn.fm.Title, uid),
-			Description: pn.fm.Description,
-			Tags:        pn.fm.Tags,
+			Title:       cleanTitle(trimQuotes(pn.fm.Title), uid),
+			Description: trimQuotes(pn.fm.Description),
+			Tags:        trimQuotesList(pn.fm.Tags),
 			SiteRootURL: cfg.SiteRootURL,
 			PublishedAt: parseDate(pn.note.Date),
 		}
@@ -216,7 +216,7 @@ func Build(cfg config.Config, templateFS fs.FS, styleCSS []byte) error {
 			CanonicalPath:      np.CanonicalPath(),
 			PublishedAt:        &np.PublishedAt,
 			PublishedAtISO:     np.PublishedAt.Format("2006-01-02"),
-			PublishedAtFormatted: np.PublishedAt.Format("2006/01/02"),
+			PublishedAtFormatted: np.PublishedAt.Format("2 January 2006"),
 		}
 
 		if err := writeHTMLPage(tmpl, cfg.BuildPath, np.LocalPath(), "note.html", inner, cfgData, pd); err != nil {
@@ -392,10 +392,26 @@ func slugify(s string) string {
 
 func cleanTitle(title, fallback string) string {
 	t := strings.ReplaceAll(title, "`", "")
+	t = strings.Trim(t, `"`)
 	if t == "" {
 		return fallback
 	}
 	return t
+}
+
+// trimQuotes removes surrounding double quotes from a YAML value.
+// The notescli hand-rolled parser doesn't strip YAML string quotes.
+func trimQuotes(s string) string {
+	return strings.Trim(s, `"`)
+}
+
+// trimQuotesList removes surrounding double quotes from each value in a list.
+func trimQuotesList(vals []string) []string {
+	result := make([]string, len(vals))
+	for i, v := range vals {
+		result[i] = trimQuotes(v)
+	}
+	return result
 }
 
 func parseDate(dateStr string) time.Time {
