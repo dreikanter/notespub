@@ -12,11 +12,11 @@ func TestResolveConfigPath(t *testing.T) {
 	home, _ := os.UserHomeDir()
 
 	tests := []struct {
-		name         string
-		flagValue    string
-		notespubPath string
-		env          map[string]string
-		want         string
+		name      string
+		flagValue string
+		envValue  string
+		env       map[string]string
+		want      string
 	}{
 		{
 			name:      "flag takes precedence",
@@ -24,37 +24,26 @@ func TestResolveConfigPath(t *testing.T) {
 			want:      "/explicit/config.yml",
 		},
 		{
-			name:         "flag takes precedence over NOTESPUB_PATH",
-			flagValue:    "/explicit/config.yml",
-			notespubPath: "/some/dir",
-			want:         "/explicit/config.yml",
+			name:      "flag takes precedence over NOTESPUB_CONFIG",
+			flagValue: "/explicit/config.yml",
+			envValue:  "/some/dir/notespub.yml",
+			want:      "/explicit/config.yml",
 		},
 		{
-			name:         "NOTESPUB_PATH basic",
-			notespubPath: "/some/dir",
-			want:         "/some/dir/notespub.yml",
+			name:     "NOTESPUB_CONFIG basic",
+			envValue: "/some/dir/notespub.yml",
+			want:     "/some/dir/notespub.yml",
 		},
 		{
-			name:         "NOTESPUB_PATH with trailing slash",
-			notespubPath: "/some/dir/",
-			want:         "/some/dir/notespub.yml",
+			name:     "NOTESPUB_CONFIG with tilde",
+			envValue: "~/notes/notespub.yml",
+			want:     filepath.Join(home, "notes", "notespub.yml"),
 		},
 		{
-			name:         "NOTESPUB_PATH with tilde",
-			notespubPath: "~/notes",
-			want:         filepath.Join(home, "notes", config.DefaultConfigFile),
-		},
-		{
-			name:         "NOTESPUB_PATH with env var",
-			notespubPath: "$TEST_NOTESPUB_HOME/notes",
-			env:          map[string]string{"TEST_NOTESPUB_HOME": "/expanded"},
-			want:         "/expanded/notes/notespub.yml",
-		},
-		{
-			name:         "NOTESPUB_PATH with env var and trailing slash",
-			notespubPath: "$TEST_NOTESPUB_HOME/notes/",
-			env:          map[string]string{"TEST_NOTESPUB_HOME": "/expanded"},
-			want:         "/expanded/notes/notespub.yml",
+			name:     "NOTESPUB_CONFIG with env var",
+			envValue: "$TEST_NOTESPUB_HOME/notespub.yml",
+			env:      map[string]string{"TEST_NOTESPUB_HOME": "/expanded"},
+			want:     "/expanded/notespub.yml",
 		},
 		{
 			name: "falls back to cwd",
@@ -67,10 +56,10 @@ func TestResolveConfigPath(t *testing.T) {
 			for k, v := range tt.env {
 				t.Setenv(k, v)
 			}
-			got := resolveConfigPath(tt.flagValue, tt.notespubPath)
+			got := resolveConfigPath(tt.flagValue, tt.envValue)
 			if got != tt.want {
 				t.Errorf("resolveConfigPath(%q, %q) = %q, want %q",
-					tt.flagValue, tt.notespubPath, got, tt.want)
+					tt.flagValue, tt.envValue, got, tt.want)
 			}
 		})
 	}

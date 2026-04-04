@@ -61,18 +61,18 @@ var serveCmd = &cobra.Command{
 	},
 }
 
-func resolveConfigPath(flagValue, notespubPath string) string {
+func resolveConfigPath(flagValue, envValue string) string {
 	if flagValue != "" {
-		return flagValue
+		return expandHome(os.ExpandEnv(flagValue))
 	}
-	if notespubPath != "" {
-		return filepath.Join(expandHome(os.ExpandEnv(notespubPath)), config.DefaultConfigFile)
+	if envValue != "" {
+		return expandHome(os.ExpandEnv(envValue))
 	}
 	return config.DefaultConfigFile
 }
 
 func loadConfig(cmd *cobra.Command, cfgPath string) (config.Config, error) {
-	cfgPath = resolveConfigPath(cfgPath, os.Getenv("NOTESPUB_PATH"))
+	cfgPath = resolveConfigPath(cfgPath, os.Getenv("NOTESPUB_CONFIG"))
 
 	flagNames := []string{"notes-path", "assets-path", "out", "url", "site-name", "author"}
 	flagOverrides := make(map[string]string)
