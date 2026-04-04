@@ -1,4 +1,4 @@
-.PHONY: build dev test lint clean install
+.PHONY: build dev test lint clean install update
 
 BINARY := notespub
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
@@ -17,6 +17,12 @@ clean:
 
 install:
 	go install -ldflags "$(LDFLAGS)" ./cmd/notespub
+
+update:
+	git checkout main
+	git pull --tags
+	$(MAKE) install
+	@echo "Installed: $$(notespub --version)"
 
 test:
 	go test ./...
