@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 
 	notespub "github.com/dreikanter/notespub"
@@ -13,6 +14,8 @@ import (
 	"github.com/dreikanter/notespub/internal/config"
 	"github.com/spf13/cobra"
 )
+
+var Version = "dev"
 
 func main() {
 	if err := rootCmd.Execute(); err != nil {
@@ -96,6 +99,13 @@ func expandHome(path string) string {
 }
 
 func init() {
+	if Version == "dev" {
+		if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "(devel)" {
+			Version = info.Main.Version
+		}
+	}
+	rootCmd.Version = Version
+
 	buildCmd.Flags().String("config", "", "config file path (default: notespub.yml)")
 	buildCmd.Flags().String("notes-path", "", "notes store path")
 	buildCmd.Flags().String("assets-path", "", "image assets path")
