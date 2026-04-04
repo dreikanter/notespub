@@ -32,17 +32,17 @@ author_name: "Ada Lovelace"
 
 All values can be overridden with CLI flags:
 
-| Config option | CLI flag | Default |
-|---|---|---|
-| `notes_path` | `--notes` | `$NOTES_PATH` |
-| `assets_path` | `--assets` | `<notes_path>/images` |
-| `build_path` | `--out` | `./dist` |
-| `static_path` | `--static` | `<notes_path>/static` |
-| `site_root_url` | `--url` | |
-| `site_name` | `--site-name` | |
-| `author_name` | `--author` | |
-| `license_name` | `--license-name` | CC BY 4.0 |
-| `license_url` | `--license-url` | https://creativecommons.org/licenses/by/4.0/ |
+| Config option | CLI flag | Default | Required |
+|---|---|---|---|
+| `notes_path` | `--notes` | `$NOTES_PATH` | |
+| `assets_path` | `--assets` | `<notes_path>/images` | |
+| `build_path` | `--out` | `./dist` | |
+| `static_path` | `--static` | `<notes_path>/static` | |
+| `site_root_url` | `--url` | | Yes |
+| `site_name` | `--site-name` | | Yes |
+| `author_name` | `--author` | | Yes |
+| `license_name` | `--license-name` | CC BY 4.0 | |
+| `license_url` | `--license-url` | https://creativecommons.org/licenses/by/4.0/ | |
 
 Priority: CLI flags > YAML config.
 
