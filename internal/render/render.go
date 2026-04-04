@@ -2,6 +2,7 @@ package render
 
 import (
 	"bytes"
+	"fmt"
 	"regexp"
 
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
@@ -15,6 +16,22 @@ import (
 	highlighting "github.com/yuin/goldmark-highlighting/v2"
 )
 
+type notProsePreWrapper struct{}
+
+func (w notProsePreWrapper) Start(code bool, styleAttr string) string {
+	if code {
+		return fmt.Sprintf(`<pre class="not-prose chroma rounded-sm px-2 py-2 text-base"%s><code>`, styleAttr)
+	}
+	return fmt.Sprintf(`<pre class="not-prose chroma rounded-sm px-2 py-2 text-base"%s>`, styleAttr)
+}
+
+func (w notProsePreWrapper) End(code bool) string {
+	if code {
+		return `</code></pre>`
+	}
+	return `</pre>`
+}
+
 // ProcessImageFunc is called for each external image URL during rendering.
 type ProcessImageFunc func(src string) (localName string, err error)
 
@@ -26,10 +43,11 @@ func Render(source []byte, noteIndex map[string]string, processImage ProcessImag
 		goldmark.WithExtensions(
 			extension.GFM,
 			highlighting.NewHighlighting(
-				highlighting.WithStyle("github"),
+				highlighting.WithStyle("friendly"),
 				highlighting.WithCSSWriter(nil),
 				highlighting.WithFormatOptions(
 					chromahtml.WithClasses(true),
+					chromahtml.WithPreWrapper(notProsePreWrapper{}),
 				),
 			),
 		),
@@ -90,11 +108,11 @@ func isExternalURL(s string) bool {
 	return len(s) > 8 && (s[:8] == "https://" || s[:7] == "http://")
 }
 
-// HighlightCSS returns the Chroma CSS for the github style, scoped to .chroma.
+// HighlightCSS returns the Chroma CSS for the friendly style, scoped to .chroma.
 func HighlightCSS() string {
 	var buf bytes.Buffer
 	formatter := chromahtml.New(chromahtml.WithClasses(true))
-	style := styles.Get("github")
+	style := styles.Get("friendly")
 	_ = formatter.WriteCSS(&buf, style)
 	return buf.String()
 }

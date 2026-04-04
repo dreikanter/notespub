@@ -17,6 +17,8 @@ module.exports = {
     "text-slate-100",
     "text-slate-400",
     "text-slate-800",
+    "text-base",
+    "rounded-sm",
     {
       "pattern": /m(l|r|x|y)-.+/,
     },
