@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"regexp"
 
+	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
+	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
@@ -25,6 +27,10 @@ func Render(source []byte, noteIndex map[string]string, processImage ProcessImag
 			extension.GFM,
 			highlighting.NewHighlighting(
 				highlighting.WithStyle("github"),
+				highlighting.WithCSSWriter(nil),
+				highlighting.WithFormatOptions(
+					chromahtml.WithClasses(true),
+				),
 			),
 		),
 		goldmark.WithParserOptions(
@@ -82,4 +88,13 @@ func isNoteID(s string) bool {
 
 func isExternalURL(s string) bool {
 	return len(s) > 8 && (s[:8] == "https://" || s[:7] == "http://")
+}
+
+// HighlightCSS returns the Chroma CSS for the github style, scoped to .chroma.
+func HighlightCSS() string {
+	var buf bytes.Buffer
+	formatter := chromahtml.New(chromahtml.WithClasses(true))
+	style := styles.Get("github")
+	_ = formatter.WriteCSS(&buf, style)
+	return buf.String()
 }
