@@ -8,7 +8,7 @@ import (
 
 func TestLoadFromYAML(t *testing.T) {
 	dir := t.TempDir()
-	yamlPath := filepath.Join(dir, "notespub.yml")
+	yamlPath := filepath.Join(dir, DefaultConfigFile)
 	err := os.WriteFile(yamlPath, []byte(`
 notes_path: "/tmp/notes"
 assets_path: "/tmp/assets"
@@ -48,7 +48,7 @@ author_name: "Test Author"
 
 func TestEnvOverridesYAML(t *testing.T) {
 	dir := t.TempDir()
-	yamlPath := filepath.Join(dir, "notespub.yml")
+	yamlPath := filepath.Join(dir, DefaultConfigFile)
 	err := os.WriteFile(yamlPath, []byte(`
 notes_path: "/tmp/notes"
 assets_path: "/tmp/assets"
@@ -88,7 +88,7 @@ author_name: "Test Author"
 
 func TestFlagOverridesEnv(t *testing.T) {
 	dir := t.TempDir()
-	yamlPath := filepath.Join(dir, "notespub.yml")
+	yamlPath := filepath.Join(dir, DefaultConfigFile)
 	err := os.WriteFile(yamlPath, []byte(`
 notes_path: "/tmp/notes"
 assets_path: "/tmp/assets"
@@ -121,7 +121,7 @@ author_name: "Test Author"
 
 func TestLoadMissingRequiredField(t *testing.T) {
 	dir := t.TempDir()
-	yamlPath := filepath.Join(dir, "notespub.yml")
+	yamlPath := filepath.Join(dir, DefaultConfigFile)
 	err := os.WriteFile(yamlPath, []byte(`
 notes_path: "/tmp/notes"
 `), 0o644)
@@ -137,7 +137,7 @@ notes_path: "/tmp/notes"
 
 func TestExpandHomePath(t *testing.T) {
 	dir := t.TempDir()
-	yamlPath := filepath.Join(dir, "notespub.yml")
+	yamlPath := filepath.Join(dir, DefaultConfigFile)
 	err := os.WriteFile(yamlPath, []byte(`
 notes_path: "~/notes"
 assets_path: "~/assets"

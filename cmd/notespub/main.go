@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 
 	notespub "github.com/dreikanter/notespub"
 	"github.com/dreikanter/notespub/internal/build"
@@ -59,13 +61,18 @@ var serveCmd = &cobra.Command{
 	},
 }
 
+func resolveConfigPath(flagValue, notespubPath string) string {
+	if flagValue != "" {
+		return flagValue
+	}
+	if notespubPath != "" {
+		return filepath.Join(expandHome(os.ExpandEnv(notespubPath)), config.DefaultConfigFile)
+	}
+	return config.DefaultConfigFile
+}
+
 func loadConfig(cmd *cobra.Command, cfgPath string) (config.Config, error) {
-	if cfgPath == "" {
-		cfgPath = os.Getenv("NOTESPUB_CONFIG")
-	}
-	if cfgPath == "" {
-		cfgPath = "notespub.yml"
-	}
+	cfgPath = resolveConfigPath(cfgPath, os.Getenv("NOTESPUB_PATH"))
 
 	envKeys := []string{
 		"NOTES_PATH", "NOTESPUB_ASSETS_PATH", "NOTESPUB_BUILD_PATH",
@@ -88,6 +95,15 @@ func loadConfig(cmd *cobra.Command, cfgPath string) (config.Config, error) {
 	}
 
 	return config.Load(cfgPath, envOverrides, flagOverrides)
+}
+
+func expandHome(path string) string {
+	if strings.HasPrefix(path, "~/") {
+		if home, err := os.UserHomeDir(); err == nil {
+			return filepath.Join(home, path[2:])
+		}
+	}
+	return path
 }
 
 func init() {

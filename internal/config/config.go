@@ -9,6 +9,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// DefaultConfigFile is the conventional config file name.
+const DefaultConfigFile = "notespub.yml"
+
 // Config holds all configuration for a notespub build.
 type Config struct {
 	NotesPath   string `yaml:"notes_path"`
