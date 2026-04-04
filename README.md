@@ -32,15 +32,17 @@ author_name: "Ada Lovelace"
 
 All values can be overridden with CLI flags:
 
-| YAML key | CLI flag |
-|---|---|
-| `notes_path` | `--notes` |
-| `assets_path` | `--assets` |
-| `build_path` | `--out` |
-| `static_path` | `--static` |
-| `site_root_url` | `--url` |
-| `site_name` | `--site-name` |
-| `author_name` | `--author` |
+| Config option | CLI flag | Default |
+|---|---|---|
+| `notes_path` | `--notes` | |
+| `assets_path` | `--assets` | `<notes_path>/images` |
+| `build_path` | `--out` | |
+| `static_path` | `--static` | `<notes_path>/static` |
+| `site_root_url` | `--url` | |
+| `site_name` | `--site-name` | |
+| `author_name` | `--author` | |
+| `license_name` | `--license-name` | CC BY 4.0 |
+| `license_url` | `--license-url` | https://creativecommons.org/licenses/by/4.0/ |
 
 Priority: CLI flags > YAML config.
 

@@ -21,6 +21,8 @@ type Config struct {
 	SiteRootURL string `yaml:"site_root_url"`
 	SiteName    string `yaml:"site_name"`
 	AuthorName  string `yaml:"author_name"`
+	LicenseName string `yaml:"license_name"`
+	LicenseURL  string `yaml:"license_url"`
 }
 
 // SiteRootPath returns the URL path component of SiteRootURL.
@@ -40,6 +42,19 @@ func (c Config) SiteRootPath() string {
 		return "/"
 	}
 	return p
+}
+
+// SiteDomain returns the domain (host) component of SiteRootURL.
+func (c Config) SiteDomain() string {
+	idx := strings.Index(c.SiteRootURL, "://")
+	if idx < 0 {
+		return c.SiteRootURL
+	}
+	rest := c.SiteRootURL[idx+3:]
+	if slash := strings.IndexByte(rest, '/'); slash >= 0 {
+		return rest[:slash]
+	}
+	return rest
 }
 
 // FeedURL returns the full feed URL.
@@ -69,13 +84,15 @@ func Load(yamlPath string, flagOverrides map[string]string) (Config, error) {
 	}
 
 	flagMap := map[string]*string{
-		"notes":  &cfg.NotesPath,
-		"assets": &cfg.AssetsPath,
-		"out":         &cfg.BuildPath,
-		"static":      &cfg.StaticPath,
-		"url":         &cfg.SiteRootURL,
-		"site-name":   &cfg.SiteName,
-		"author":      &cfg.AuthorName,
+		"notes":        &cfg.NotesPath,
+		"assets":       &cfg.AssetsPath,
+		"out":          &cfg.BuildPath,
+		"static":       &cfg.StaticPath,
+		"url":          &cfg.SiteRootURL,
+		"site-name":    &cfg.SiteName,
+		"author":       &cfg.AuthorName,
+		"license-name": &cfg.LicenseName,
+		"license-url":  &cfg.LicenseURL,
 	}
 	for flagKey, ptr := range flagMap {
 		if v, ok := flagOverrides[flagKey]; ok && v != "" {
@@ -92,6 +109,13 @@ func Load(yamlPath string, flagOverrides map[string]string) (Config, error) {
 	}
 	if cfg.AssetsPath == "" && cfg.NotesPath != "" {
 		cfg.AssetsPath = filepath.Join(cfg.NotesPath, "images")
+	}
+
+	if cfg.LicenseName == "" {
+		cfg.LicenseName = "CC BY 4.0"
+	}
+	if cfg.LicenseURL == "" {
+		cfg.LicenseURL = "https://creativecommons.org/licenses/by/4.0/"
 	}
 
 	if cfg.SiteRootURL == "" {
