@@ -100,8 +100,14 @@ func Load(yamlPath string, flagOverrides map[string]string) (Config, error) {
 		}
 	}
 
+	if cfg.NotesPath == "" {
+		cfg.NotesPath = os.Getenv("NOTES_PATH")
+	}
 	cfg.NotesPath = expandHome(cfg.NotesPath)
 	cfg.AssetsPath = expandHome(cfg.AssetsPath)
+	if cfg.BuildPath == "" {
+		cfg.BuildPath = "./dist"
+	}
 	cfg.BuildPath = expandHome(cfg.BuildPath)
 	cfg.StaticPath = expandHome(cfg.StaticPath)
 	if cfg.StaticPath == "" && cfg.NotesPath != "" {

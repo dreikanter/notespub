@@ -34,9 +34,9 @@ All values can be overridden with CLI flags:
 
 | Config option | CLI flag | Default |
 |---|---|---|
-| `notes_path` | `--notes` | |
+| `notes_path` | `--notes` | `$NOTES_PATH` |
 | `assets_path` | `--assets` | `<notes_path>/images` |
-| `build_path` | `--out` | |
+| `build_path` | `--out` | `./dist` |
 | `static_path` | `--static` | `<notes_path>/static` |
 | `site_root_url` | `--url` | |
 | `site_name` | `--site-name` | |
