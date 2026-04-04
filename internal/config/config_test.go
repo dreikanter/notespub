@@ -62,7 +62,7 @@ author_name: "Test Author"
 	}
 
 	flagOverrides := map[string]string{
-		"notes-path": "/flag/notes",
+		"notes": "/flag/notes",
 	}
 
 	cfg, err := Load(yamlPath, flagOverrides)
