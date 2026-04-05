@@ -9,6 +9,14 @@
   {{if .Page.CanonicalPath}}
     <link rel="canonical" href="{{.Config.SiteRootURL}}/{{.Page.CanonicalPath}}">
   {{end}}
+  <meta property="og:title" content="{{if .Page.Title}}{{.Page.Title}}{{else}}{{.Config.SiteName}}{{end}}" />
+  <meta property="og:description" content="{{.Page.MetaDescription}}" />
+  <meta property="og:type" content="{{if .Page.Title}}article{{else}}website{{end}}" />
+  <meta property="og:url" content="{{.Config.SiteRootURL}}{{if .Page.CanonicalPath}}/{{.Page.CanonicalPath}}{{end}}" />
+  <meta property="og:site_name" content="{{.Config.SiteName}}" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="{{if .Page.Title}}{{.Page.Title}}{{else}}{{.Config.SiteName}}{{end}}" />
+  <meta name="twitter:description" content="{{.Page.MetaDescription}}" />
   <link rel="alternate" type="application/rss+xml" title="{{.Config.SiteName}}" href="{{.Config.FeedURL}}">
   <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCI+CiAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNDgiIGZpbGw9IiM0YTkwZTIiLz4KICA8cGF0aCBkPSJNMjUgNTAgTDc1IDUwIE03NSA1MCBMNTcgMzIgTTc1IDUwIEw1NyA2OCIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIxMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBmaWxsPSJub25lIi8+Cjwvc3ZnPg==">
   <link href="/style.css" rel="stylesheet" type="text/css">
