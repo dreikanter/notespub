@@ -44,12 +44,9 @@ type configData struct {
 
 // pageData holds metadata for the layout template.
 type pageData struct {
-	Title              string
-	MetaDescription    string
-	CanonicalPath      string
-	PublishedAt        *time.Time
-	PublishedAtISO     string
-	PublishedAtFormatted string
+	Title           string
+	MetaDescription string
+	CanonicalPath   string
 }
 
 // noteData is the data passed to note.html inner template.
@@ -300,12 +297,9 @@ func Build(cfg config.Config, templateFS fs.FS, styleCSS []byte) error {
 		}
 
 		pd := pageData{
-			Title:              np.Title,
-			MetaDescription:    np.Description,
-			CanonicalPath:      np.CanonicalPath(),
-			PublishedAt:        &np.PublishedAt,
-			PublishedAtISO:     np.PublishedAt.Format("2006-01-02"),
-			PublishedAtFormatted: np.PublishedAt.Format("2 January 2006"),
+			Title:           np.Title,
+			MetaDescription: np.Description,
+			CanonicalPath:   np.CanonicalPath(),
 		}
 
 		if err := writeHTMLPage(tmpl, cfg.BuildPath, np.LocalPath(), "note.html", inner, cfgData, pd); err != nil {

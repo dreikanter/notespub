@@ -2,14 +2,10 @@
 
 {{.Note.Body}}
 
-{{if .Note.Tags}}
-  <hr class="!my-6">
-  <div class="flex flex-row flex-wrap items-stretch !my-6">
-    {{range .Note.Tags}}
-      <a href="/tags/{{.}}" class="block border rounded-md py-0 px-2 my-1 mr-2 no-underline font-normal bg-slate-100 !text-slate-800 border-slate-200">{{.}}</a>
-    {{end}}
-  </div>
-{{end}}
+<div class="not-prose flex flex-row flex-wrap items-baseline gap-2 text-slate-400" style="margin-top:3rem">
+  <time datetime="{{.Note.PublishedAt.Format "2006-01-02"}}">{{.Note.PublishedAt.Format "2 January 2006"}}</time>{{if .Note.Tags}}<span>&middot;</span>{{range .Note.Tags}}
+  <a href="/tags/{{.}}" class="border rounded-md py-0 px-2 no-underline font-normal bg-slate-100 !text-slate-800 border-slate-200">{{.}}</a>{{end}}{{end}}
+</div>
 
 {{if .Related}}
   <hr class="!my-6">
