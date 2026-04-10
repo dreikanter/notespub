@@ -74,4 +74,4 @@ The `serve` command starts a local HTTP server on port 4000 (override with `--po
 
 ## Notes format
 
-Notes are Markdown files managed by [notescli](https://github.com/dreikanter/notescli). A note becomes part of the published site when its frontmatter includes `public: true`.
+Notes are Markdown files managed by [notes-cli](https://github.com/dreikanter/notes-cli). A note becomes part of the published site when its frontmatter includes `public: true`.

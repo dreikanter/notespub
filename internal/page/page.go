@@ -2,6 +2,7 @@ package page
 
 import (
 	"fmt"
+	"net/url"
 	"path"
 	"sort"
 	"strings"
@@ -112,11 +113,11 @@ type TagPage struct {
 }
 
 func (p TagPage) LocalPath() string {
-	return fmt.Sprintf("tags/%s/index.html", p.Tag)
+	return fmt.Sprintf("tags/%s/index.html", url.PathEscape(p.Tag))
 }
 
 func (p TagPage) PublicPath() string {
-	return fmt.Sprintf("tags/%s", p.Tag)
+	return fmt.Sprintf("tags/%s", url.PathEscape(p.Tag))
 }
 
 func (p TagPage) CanonicalPath() string {

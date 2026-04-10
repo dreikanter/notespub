@@ -1,16 +1,14 @@
-<div class="flex flex-row flex-wrap items-stretch !my-6">
-  {{range .Tags}}
-    <a href="/tags/{{.}}" class="block border rounded-md py-0 px-2 my-1 mr-2 no-underline font-normal bg-slate-100 !text-slate-800 border-slate-200">{{.}}</a>
-  {{end}}
+<div class="flex flex-row gap-8">
+  <div class="flex-1 min-w-0">
+    <p class="!my-0 !mb-2 text-base text-slate-600">Tagged with <a href="/tags/{{.CurrentTag}}">{{.CurrentTag}}</a>:</p>
+    <ul class="list-none !pl-0 !my-0 space-y-1">
+      {{range .TaggedPages}}
+        <li>
+          <a href="/{{.PublicPath}}">{{.Title}}</a>
+          <small class="text-slate-400"><time datetime="{{.PublishedAt.Format "2006-01-02"}}">{{.PublishedAt.Format "2006/01/02"}}</time></small>
+        </li>
+      {{end}}
+    </ul>
+  </div>
+  {{template "tags" .Tags}}
 </div>
-
-<p>Tagged with <a href="/tags/{{.CurrentTag}}">{{.CurrentTag}}</a>:</p>
-
-<ul>
-  {{range .TaggedPages}}
-    <li>
-      <a href="/{{.PublicPath}}">{{.Title}}</a>
-      <small class="text-slate-400"><time datetime="{{.PublishedAt.Format "2006-01-02"}}">{{.PublishedAt.Format "2006/01/02"}}</time></small>
-    </li>
-  {{end}}
-</ul>
