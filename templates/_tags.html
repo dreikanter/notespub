@@ -1,7 +1,7 @@
 {{define "tags"}}
 <ul class="hidden lg:block list-none !pl-0 !my-0 flex-shrink-0">
   {{range .}}
-    <li class="w-fit m-0 text-sm leading-8">
+    <li class="w-fit !m-0 !p-0 text-sm !leading-tight">
       <a href="/tags/{{.}}">{{.}}</a>
     </li>
   {{end}}
