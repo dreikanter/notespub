@@ -9,9 +9,5 @@
       {{end}}
     </ul>
   </div>
-  <div class="hidden lg:block flex-shrink-0 space-y-1">
-    {{range .Tags}}
-      <a href="/tags/{{.}}" class="block rounded-md py-0 px-2 no-underline font-normal text-sm bg-slate-100 !text-slate-800 border border-slate-200 whitespace-nowrap">{{.}}</a>
-    {{end}}
-  </div>
+  {{template "tags" .Tags}}
 </div>
