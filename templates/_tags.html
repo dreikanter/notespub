@@ -1,7 +1,9 @@
 {{define "tags"}}
-<div class="hidden lg:block flex-shrink-0 space-y-1">
+<ul class="hidden lg:block list-none !pl-0 !my-0 flex-shrink-0 space-y-1">
   {{range .}}
-    <a href="/tags/{{.}}" class="block rounded-md py-0 px-2 no-underline font-normal text-sm bg-slate-100 !text-slate-800 border border-slate-200 whitespace-nowrap">{{.}}</a>
+    <li class="w-fit">
+      <a href="/tags/{{.}}" class="block rounded-md py-0 px-2 no-underline font-normal text-sm bg-slate-100 !text-slate-800 border border-slate-200 whitespace-nowrap">{{.}}</a>
+    </li>
   {{end}}
-</div>
+</ul>
 {{end}}
