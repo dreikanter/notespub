@@ -51,6 +51,9 @@ module.exports = {
             'h3 code': {
               fontSize: 'inherit',
             },
+            'a:hover': {
+              color: '#0284c7', // sky-600
+            },
           }
         }
       },

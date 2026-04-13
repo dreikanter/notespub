@@ -2,7 +2,7 @@
 
 <div class="not-prose flex flex-row flex-wrap items-baseline gap-2 text-slate-400 !mb-8">
   <time datetime="{{.Note.PublishedAt.Format "2006-01-02"}}">{{.Note.PublishedAt.Format "2 January 2006"}}</time>{{if .Note.Tags}}<span>&middot;</span>{{range .Note.Tags}}
-  <a href="/tags/{{.}}" class="no-underline font-normal !text-slate-400">#{{.}}</a>{{end}}{{end}}
+  <a href="/tags/{{.}}" class="no-underline hover:underline font-normal !text-slate-400 hover:!text-slate-700">#{{.}}</a>{{end}}{{end}}
 </div>
 
 {{.Note.Body}}
