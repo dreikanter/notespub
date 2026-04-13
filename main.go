@@ -9,7 +9,6 @@ import (
 	"runtime/debug"
 	"strings"
 
-	notespub "github.com/dreikanter/notes-pub"
 	"github.com/dreikanter/notes-pub/internal/build"
 	"github.com/dreikanter/notes-pub/internal/config"
 	"github.com/spf13/cobra"
@@ -40,7 +39,7 @@ var buildCmd = &cobra.Command{
 		}
 
 		log.Printf("building site from %s to %s", cfg.NotesPath, cfg.BuildPath)
-		if err := build.Build(cfg, notespub.TemplateFS, notespub.StyleCSS); err != nil {
+		if err := build.Build(cfg, TemplateFS, StyleCSS); err != nil {
 			return fmt.Errorf("build failed: %w", err)
 		}
 		log.Println("build complete")

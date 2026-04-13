@@ -6,17 +6,17 @@ LDFLAGS := -X main.Version=$(VERSION)
 
 build:  ## Compile CSS then build binary
 	npx tailwindcss -i stylesheets/main.css -o style.css --minify
-	go build -ldflags "$(LDFLAGS)" -o $(BINARY) ./cmd/notespub
+	go build -ldflags "$(LDFLAGS)" -o $(BINARY) .
 
 dev:    ## Watch mode: recompile on changes
 	npx tailwindcss -i stylesheets/main.css -o style.css --watch &
-	go build -ldflags "$(LDFLAGS)" -o $(BINARY) ./cmd/notespub
+	go build -ldflags "$(LDFLAGS)" -o $(BINARY) .
 
 clean:
 	rm -f $(BINARY)
 
 install:
-	go install -ldflags "$(LDFLAGS)" ./cmd/notespub
+	go install -ldflags "$(LDFLAGS)" .
 
 update:
 	git checkout main
