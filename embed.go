@@ -1,4 +1,4 @@
-package main
+package notespub
 
 import "embed"
 

@@ -7,6 +7,12 @@ A static site builder for Markdown notes. Reads notes from a local directory, re
 - Go 1.25+
 - Node.js (for Tailwind CSS)
 
+## Install
+
+```sh
+go install github.com/dreikanter/notes-pub/cmd/notespub@latest
+```
+
 ## Build
 
 Install dependencies and build:
