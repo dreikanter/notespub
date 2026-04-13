@@ -43,7 +43,7 @@ module.exports = {
               fontSize: '0.9em',
             },
             'pre': {
-              fontSize: '1em',
+              fontSize: '0.9em',
             },
             'h2 code': {
               fontSize: 'inherit',
