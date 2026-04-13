@@ -44,6 +44,12 @@ module.exports = {
             },
             'pre': {
               fontSize: '0.9em',
+              lineHeight: '1.5',
+              borderRadius: '0.125rem',
+              paddingTop: '0.75rem',
+              paddingBottom: '0.75rem',
+              paddingLeft: '1rem',
+              paddingRight: '1rem',
             },
             'h2 code': {
               fontSize: 'inherit',

@@ -16,16 +16,16 @@ import (
 	highlighting "github.com/yuin/goldmark-highlighting/v2"
 )
 
-type notProsePreWrapper struct{}
+type chromaPreWrapper struct{}
 
-func (w notProsePreWrapper) Start(code bool, styleAttr string) string {
+func (w chromaPreWrapper) Start(code bool, styleAttr string) string {
 	if code {
-		return fmt.Sprintf(`<pre class="not-prose chroma rounded-sm px-4 py-3 text-base leading-normal overflow-x-auto"%s><code>`, styleAttr)
+		return fmt.Sprintf(`<pre class="chroma"%s><code>`, styleAttr)
 	}
-	return fmt.Sprintf(`<pre class="not-prose chroma rounded-sm px-4 py-3 text-base leading-normal overflow-x-auto"%s>`, styleAttr)
+	return fmt.Sprintf(`<pre class="chroma"%s>`, styleAttr)
 }
 
-func (w notProsePreWrapper) End(code bool) string {
+func (w chromaPreWrapper) End(code bool) string {
 	if code {
 		return `</code></pre>`
 	}
@@ -48,7 +48,7 @@ func Render(source []byte, noteIndex map[string]string, processImage ProcessImag
 				highlighting.WithCSSWriter(nil),
 				highlighting.WithFormatOptions(
 					chromahtml.WithClasses(true),
-					chromahtml.WithPreWrapper(notProsePreWrapper{}),
+					chromahtml.WithPreWrapper(chromaPreWrapper{}),
 				),
 			),
 		),
