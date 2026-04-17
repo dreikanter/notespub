@@ -191,10 +191,22 @@ Hello **world**.
 		t.Error("feed missing note title")
 	}
 
-	// Check style.css is copied.
+	// Check style.css is NOT written to disk (inlined into HTML instead).
 	stylePath := filepath.Join(buildDir, "style.css")
-	if _, err := os.Stat(stylePath); err != nil {
-		t.Errorf("style.css not found: %v", err)
+	if _, err := os.Stat(stylePath); !os.IsNotExist(err) {
+		t.Errorf("style.css should not be written to build dir (CSS is inlined), got err: %v", err)
+	}
+
+	// Check CSS is inlined into HTML.
+	indexData, err := os.ReadFile(filepath.Join(buildDir, "index.html"))
+	if err != nil {
+		t.Fatalf("reading index.html: %v", err)
+	}
+	if !strings.Contains(string(indexData), "/* test */") {
+		t.Error("index.html should contain inlined styleCSS")
+	}
+	if strings.Contains(string(indexData), `href="/style.css"`) {
+		t.Error("index.html should not reference external /style.css")
 	}
 }
 

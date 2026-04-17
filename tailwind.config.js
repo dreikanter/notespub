@@ -21,12 +21,6 @@ module.exports = {
     "leading-normal",
     "overflow-x-auto",
     "rounded-sm",
-    {
-      "pattern": /m(l|r|x|y)-.+/,
-    },
-    {
-      "pattern": /p(l|r|x|y)-.+/,
-    },
   ],
   theme: {
     extend: {
