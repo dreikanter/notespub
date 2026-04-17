@@ -112,7 +112,7 @@ func isExternalURL(s string) bool {
 // HighlightCSS returns the Chroma CSS for the friendly style, scoped to .chroma.
 func HighlightCSS() string {
 	var buf bytes.Buffer
-	formatter := chromahtml.New(chromahtml.WithClasses(true))
+	formatter := chromahtml.New(chromahtml.WithClasses(true), chromahtml.WithCSSComments(false))
 	style := styles.Get("monokailight")
 	_ = formatter.WriteCSS(&buf, style)
 	return buf.String()
