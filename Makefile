@@ -4,15 +4,11 @@ BINARY := notespub
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -X main.Version=$(VERSION)
 
-node_modules: package.json package-lock.json
-	npm install
-	@touch node_modules
-
-build: node_modules  ## Compile CSS then build binary
+build:  ## Compile CSS then build binary
 	npx tailwindcss -i stylesheets/main.css -o style.css --minify
 	go build -ldflags "$(LDFLAGS)" -o $(BINARY) ./cmd/notespub
 
-dev: node_modules  ## Watch mode: recompile on changes
+dev:    ## Watch mode: recompile on changes
 	npx tailwindcss -i stylesheets/main.css -o style.css --watch &
 	go build -ldflags "$(LDFLAGS)" -o $(BINARY) ./cmd/notespub
 
