@@ -3,7 +3,3 @@
 @tailwind utilities;
 @tailwind typography;
 
-main:not(:has(aside)) + footer hr {
-  display: none;
-}
-
