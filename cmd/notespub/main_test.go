@@ -11,10 +11,17 @@ import (
 func TestResolveConfigPath(t *testing.T) {
 	home, _ := os.UserHomeDir()
 
+	notesDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(notesDir, config.DefaultConfigFile), []byte("---\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	emptyNotesDir := t.TempDir()
+
 	tests := []struct {
 		name      string
 		flagValue string
 		envValue  string
+		notesPath string
 		env       map[string]string
 		want      string
 	}{
@@ -28,6 +35,18 @@ func TestResolveConfigPath(t *testing.T) {
 			flagValue: "/explicit/config.yml",
 			envValue:  "/some/dir/notespub.yml",
 			want:      "/explicit/config.yml",
+		},
+		{
+			name:      "flag takes precedence over NOTES_PATH config",
+			flagValue: "/explicit/config.yml",
+			notesPath: notesDir,
+			want:      "/explicit/config.yml",
+		},
+		{
+			name:      "NOTESPUB_CONFIG takes precedence over NOTES_PATH config",
+			envValue:  "/some/dir/notespub.yml",
+			notesPath: notesDir,
+			want:      "/some/dir/notespub.yml",
 		},
 		{
 			name:     "NOTESPUB_CONFIG basic",
@@ -46,6 +65,16 @@ func TestResolveConfigPath(t *testing.T) {
 			want:     "/expanded/notespub.yml",
 		},
 		{
+			name:      "NOTES_PATH config when present",
+			notesPath: notesDir,
+			want:      filepath.Join(notesDir, config.DefaultConfigFile),
+		},
+		{
+			name:      "NOTES_PATH with no config file falls back to cwd",
+			notesPath: emptyNotesDir,
+			want:      config.DefaultConfigFile,
+		},
+		{
 			name: "falls back to cwd",
 			want: config.DefaultConfigFile,
 		},
@@ -56,10 +85,10 @@ func TestResolveConfigPath(t *testing.T) {
 			for k, v := range tt.env {
 				t.Setenv(k, v)
 			}
-			got := resolveConfigPath(tt.flagValue, tt.envValue)
+			got := resolveConfigPath(tt.flagValue, tt.envValue, tt.notesPath)
 			if got != tt.want {
-				t.Errorf("resolveConfigPath(%q, %q) = %q, want %q",
-					tt.flagValue, tt.envValue, got, tt.want)
+				t.Errorf("resolveConfigPath(%q, %q, %q) = %q, want %q",
+					tt.flagValue, tt.envValue, tt.notesPath, got, tt.want)
 			}
 		})
 	}

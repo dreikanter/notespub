@@ -52,7 +52,14 @@ All values can be overridden with CLI flags:
 
 Priority: CLI flags > YAML config.
 
-The config file defaults to `notespub.yml` in the current directory. Override with `--config` or `NOTESPUB_CONFIG` env var.
+Config file discovery order:
+
+1. `--config` flag
+2. `NOTESPUB_CONFIG` env var
+3. `notespub.yml` inside `$NOTES_PATH` (or `--notes` value) if it exists
+4. `notespub.yml` in the current directory
+
+See `notespub.sample.yml` in the repo for a starting template.
 
 ### Image assets
 

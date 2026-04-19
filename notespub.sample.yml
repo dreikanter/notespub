@@ -1,0 +1,7 @@
+---
+notes_path: "~/notes"
+build_path: "./dist"
+site_root_url: "https://example.com"
+site_name: "My Notes"
+author_name: "Ada Lovelace"
+# intro: "Optional short paragraph shown above the posts list on the index page."
