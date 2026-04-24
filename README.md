@@ -81,3 +81,10 @@ The `serve` command starts a local HTTP server on port 4000 (override with `--po
 ## Notes format
 
 Notes are Markdown files managed by [notes-cli](https://github.com/dreikanter/notes-cli). A note becomes part of the published site when its frontmatter includes `public: true`.
+
+## Versioning
+
+`CHANGELOG.md` is the source of truth for the version. On PR merge, GitHub
+Actions (`.github/workflows/tag.yml`) reads the topmost `## [X.Y.Z]` heading
+from `CHANGELOG.md` and pushes `vX.Y.Z` as a git tag. Bump major/minor/patch
+by writing the desired heading in the PR.
