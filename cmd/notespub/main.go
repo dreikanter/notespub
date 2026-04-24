@@ -9,6 +9,7 @@ import (
 	"runtime/debug"
 	"strings"
 
+	"github.com/dreikanter/notes-cli/note"
 	notespub "github.com/dreikanter/notes-pub"
 	"github.com/dreikanter/notes-pub/internal/build"
 	"github.com/dreikanter/notes-pub/internal/config"
@@ -40,7 +41,8 @@ var buildCmd = &cobra.Command{
 		}
 
 		log.Printf("building site from %s to %s", cfg.NotesPath, cfg.BuildPath)
-		if err := build.Build(cfg, notespub.TemplateFS, notespub.StyleCSS); err != nil {
+		store := note.NewOSStore(cfg.NotesPath)
+		if err := build.Build(store, cfg, notespub.TemplateFS, notespub.StyleCSS); err != nil {
 			return fmt.Errorf("build failed: %w", err)
 		}
 		log.Println("build complete")
