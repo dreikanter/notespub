@@ -7,7 +7,7 @@ import (
 
 func TestRenderBasicMarkdown(t *testing.T) {
 	md := "# Hello\n\nThis is a **test**.\n"
-	html, err := Render([]byte(md), nil, nil)
+	html, err := Render(md, nil, nil)
 	if err != nil {
 		t.Fatalf("Render() error: %v", err)
 	}
@@ -21,7 +21,7 @@ func TestRenderBasicMarkdown(t *testing.T) {
 
 func TestRenderFencedCode(t *testing.T) {
 	md := "```go\nfmt.Println(\"hello\")\n```\n"
-	html, err := Render([]byte(md), nil, nil)
+	html, err := Render(md, nil, nil)
 	if err != nil {
 		t.Fatalf("Render() error: %v", err)
 	}
@@ -31,11 +31,11 @@ func TestRenderFencedCode(t *testing.T) {
 }
 
 func TestRenderNoteLink(t *testing.T) {
-	noteIndex := map[string]string{
-		"8823": "20260106_8823/some-slug",
+	noteIndex := map[int]string{
+		8823: "20260106_8823/some-slug",
 	}
 	md := "See [this note](8823)\n"
-	html, err := Render([]byte(md), noteIndex, nil)
+	html, err := Render(md, noteIndex, nil)
 	if err != nil {
 		t.Fatalf("Render() error: %v", err)
 	}
@@ -46,7 +46,7 @@ func TestRenderNoteLink(t *testing.T) {
 
 func TestRenderNoteLinkUnresolved(t *testing.T) {
 	md := "See [this note](9999)\n"
-	html, err := Render([]byte(md), nil, nil)
+	html, err := Render(md, nil, nil)
 	if err != nil {
 		t.Fatalf("Render() error: %v", err)
 	}
@@ -57,7 +57,7 @@ func TestRenderNoteLinkUnresolved(t *testing.T) {
 
 func TestRenderAutolink(t *testing.T) {
 	md := "Visit https://example.com for info.\n"
-	html, err := Render([]byte(md), nil, nil)
+	html, err := Render(md, nil, nil)
 	if err != nil {
 		t.Fatalf("Render() error: %v", err)
 	}
@@ -68,7 +68,7 @@ func TestRenderAutolink(t *testing.T) {
 
 func TestRenderStrikethrough(t *testing.T) {
 	md := "This is ~~deleted~~ text.\n"
-	html, err := Render([]byte(md), nil, nil)
+	html, err := Render(md, nil, nil)
 	if err != nil {
 		t.Fatalf("Render() error: %v", err)
 	}
@@ -79,7 +79,7 @@ func TestRenderStrikethrough(t *testing.T) {
 
 func TestRenderTable(t *testing.T) {
 	md := "| A | B |\n|---|---|\n| 1 | 2 |\n"
-	html, err := Render([]byte(md), nil, nil)
+	html, err := Render(md, nil, nil)
 	if err != nil {
 		t.Fatalf("Render() error: %v", err)
 	}
@@ -95,7 +95,7 @@ func TestRenderImageCallback(t *testing.T) {
 		return "abc123.jpg", nil
 	}
 	md := "![alt text](https://example.com/img.jpg)\n"
-	html, err := Render([]byte(md), nil, processImage)
+	html, err := Render(md, nil, processImage)
 	if err != nil {
 		t.Fatalf("Render() error: %v", err)
 	}

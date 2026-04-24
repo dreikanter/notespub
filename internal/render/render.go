@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"regexp"
+	"strconv"
 
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/alecthomas/chroma/v2/styles"
@@ -38,7 +39,7 @@ type ProcessImageFunc func(src string) (localName string, err error)
 // Render converts Markdown to HTML.
 // noteIndex maps note IDs to their public paths (for link resolution).
 // processImage is called for external image URLs (may be nil).
-func Render(source []byte, noteIndex map[string]string, processImage ProcessImageFunc) ([]byte, error) {
+func Render(source string, noteIndex map[int]string, processImage ProcessImageFunc) ([]byte, error) {
 	md := goldmark.New(
 		goldmark.WithExtensions(
 			extension.GFM,
@@ -57,7 +58,8 @@ func Render(source []byte, noteIndex map[string]string, processImage ProcessImag
 		),
 	)
 
-	reader := text.NewReader(source)
+	sourceBytes := []byte(source)
+	reader := text.NewReader(sourceBytes)
 	doc := md.Parser().Parse(reader)
 
 	// Walk AST and transform links and images.
@@ -70,8 +72,11 @@ func Render(source []byte, noteIndex map[string]string, processImage ProcessImag
 		case *ast.Link:
 			dest := string(node.Destination)
 			if isNoteID(dest) && noteIndex != nil {
-				if resolved, ok := noteIndex[dest]; ok {
-					node.Destination = []byte("/" + resolved)
+				id, err := strconv.Atoi(dest)
+				if err == nil {
+					if resolved, ok := noteIndex[id]; ok {
+						node.Destination = []byte("/" + resolved)
+					}
 				}
 			}
 
@@ -93,7 +98,7 @@ func Render(source []byte, noteIndex map[string]string, processImage ProcessImag
 	}
 
 	var buf bytes.Buffer
-	if err := md.Renderer().Render(&buf, source, doc); err != nil {
+	if err := md.Renderer().Render(&buf, sourceBytes, doc); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil

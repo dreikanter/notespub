@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -164,7 +165,7 @@ func copyStaticFiles(staticPath, buildPath string) error {
 }
 
 // Build generates the static site from notes.
-func Build(cfg config.Config, templateFS fs.FS, styleCSS []byte) error {
+func Build(store note.Store, cfg config.Config, templateFS fs.FS, styleCSS []byte) error {
 	// 0. Clean build directory.
 	if err := cleanBuildDir(cfg.BuildPath); err != nil {
 		return err
@@ -177,64 +178,18 @@ func Build(cfg config.Config, templateFS fs.FS, styleCSS []byte) error {
 		}
 	}
 
-	// 1. Scan notes.
-	notes, err := note.Scan(cfg.NotesPath)
+	// 1. Read public notes from the store.
+	entries, err := store.All(note.WithPublic(true))
 	if err != nil {
-		return fmt.Errorf("scanning notes: %w", err)
+		return fmt.Errorf("reading notes: %w", err)
 	}
 
-	// 2. Parse frontmatter and filter to public notes.
-	type parsedNote struct {
-		note note.Note
-		fm   note.FrontmatterFields
-		body []byte
-	}
+	// 2. Build note-page models and the ID → public-path index.
+	notePages, noteIndex := buildNotePages(entries, cfg.SiteRootURL)
 
-	var publicNotes []parsedNote
-	for _, n := range notes {
-		data, err := os.ReadFile(filepath.Join(cfg.NotesPath, n.RelPath))
-		if err != nil {
-			return fmt.Errorf("reading note %s: %w", n.RelPath, err)
-		}
-		fm := note.ParseFrontmatterFields(data)
-		if !fm.Public {
-			continue
-		}
-		body := note.StripFrontmatter(data)
-		publicNotes = append(publicNotes, parsedNote{note: n, fm: fm, body: body})
-	}
-
-	// 3. Build note pages and note index (for link resolution).
-	noteIndex := make(map[string]string) // note ID -> public path
-	var notePages []page.NotePage
+	// 3. Render Markdown for each note (now that noteIndex is complete).
 	imgCache := images.NewCache(cfg.AssetsPath)
-
-	for _, pn := range publicNotes {
-		uid := pn.note.Date + "_" + pn.note.ID
-		slug := slugify(trimQuotes(pn.fm.Slug))
-		if slug == "" {
-			slug = slugify(trimQuotes(pn.fm.Title))
-		}
-		if slug == "" {
-			slug = pn.note.ID
-		}
-
-		np := page.NotePage{
-			UID:         uid,
-			ShortUID:    pn.note.ID,
-			Slug:        slug,
-			Title:       cleanTitle(trimQuotes(pn.fm.Title), uid),
-			Description: trimQuotes(pn.fm.Description),
-			Tags:        trimQuotesList(pn.fm.Tags),
-			SiteRootURL: cfg.SiteRootURL,
-			PublishedAt: parseDate(pn.note.Date),
-		}
-		noteIndex[pn.note.ID] = np.PublicPath()
-		notePages = append(notePages, np)
-	}
-
-	// 4. Render Markdown for each note (now that noteIndex is complete).
-	for i, pn := range publicNotes {
+	for i, e := range entries {
 		uid := notePages[i].UID
 		processImage := func(src string) (string, error) {
 			entry, err := imgCache.Get(src, uid)
@@ -247,17 +202,17 @@ func Build(cfg config.Config, templateFS fs.FS, styleCSS []byte) error {
 			})
 			return entry.FileName, nil
 		}
-		rendered, err := render.Render(pn.body, noteIndex, processImage)
+		rendered, err := render.Render(e.Body, noteIndex, processImage)
 		if err != nil {
-			return fmt.Errorf("rendering note %s: %w", pn.note.RelPath, err)
+			return fmt.Errorf("rendering note %d: %w", e.ID, err)
 		}
 		notePages[i].Body = string(rendered)
 	}
 
-	// 5. Sort pages newest first.
+	// 4. Sort pages newest first (defensive — store already returns newest-first).
 	page.SortNotePages(notePages)
 
-	// 6. Load templates.
+	// 5. Load templates.
 	tmpl, err := template.New("").ParseFS(templateFS, "templates/*.html")
 	if err != nil {
 		return fmt.Errorf("parsing HTML templates: %w", err)
@@ -283,7 +238,7 @@ func Build(cfg config.Config, templateFS fs.FS, styleCSS []byte) error {
 		HighlightCSS: template.CSS(render.HighlightCSS()),
 	}
 
-	// 7. Write note pages and redirects.
+	// 6. Write note pages and redirects.
 	for _, np := range notePages {
 		nvd := toNoteViewData(np)
 
@@ -327,7 +282,7 @@ func Build(cfg config.Config, templateFS fs.FS, styleCSS []byte) error {
 		}
 	}
 
-	// 8. Write index page.
+	// 7. Write index page.
 	allTags := page.AllTags(notePages)
 	var noteViews []noteViewData
 	for _, np := range notePages {
@@ -347,7 +302,7 @@ func Build(cfg config.Config, templateFS fs.FS, styleCSS []byte) error {
 		return fmt.Errorf("writing index page: %w", err)
 	}
 
-	// 9. Write tag pages.
+	// 8. Write tag pages.
 	for _, tag := range allTags {
 		tagged := page.TaggedPages(notePages, tag)
 		var taggedViews []noteViewData
@@ -370,7 +325,7 @@ func Build(cfg config.Config, templateFS fs.FS, styleCSS []byte) error {
 		}
 	}
 
-	// 10. Write feed.
+	// 9. Write feed.
 	var feedNotes []feedNoteData
 	for _, np := range notePages {
 		feedNotes = append(feedNotes, feedNoteData{
@@ -395,6 +350,50 @@ func Build(cfg config.Config, templateFS fs.FS, styleCSS []byte) error {
 	}
 
 	return nil
+}
+
+// buildNotePages converts note.Entry values into page.NotePage models and
+// builds the ID → public-path index used for link resolution.
+func buildNotePages(entries []note.Entry, siteRootURL string) ([]page.NotePage, map[int]string) {
+	pages := make([]page.NotePage, 0, len(entries))
+	index := make(map[int]string, len(entries))
+	for _, e := range entries {
+		uid := e.Meta.CreatedAt.Format("20060102") + "_" + strconv.Itoa(e.ID)
+		slug := chooseSlug(e)
+		np := page.NotePage{
+			UID:         uid,
+			ShortUID:    strconv.Itoa(e.ID),
+			Slug:        slug,
+			Title:       titleOrUID(e.Meta.Title, uid),
+			Description: e.Meta.Description,
+			Tags:        e.Meta.Tags,
+			SiteRootURL: siteRootURL,
+			PublishedAt: e.Meta.CreatedAt,
+		}
+		index[e.ID] = np.PublicPath()
+		pages = append(pages, np)
+	}
+	return pages, index
+}
+
+// chooseSlug returns the slug to use for e, falling back from Meta.Slug to
+// slugified Meta.Title to the entry's ID.
+func chooseSlug(e note.Entry) string {
+	if s := slugify(e.Meta.Slug); s != "" {
+		return s
+	}
+	if s := slugify(e.Meta.Title); s != "" {
+		return s
+	}
+	return strconv.Itoa(e.ID)
+}
+
+// titleOrUID returns title when non-empty, otherwise uid as a fallback.
+func titleOrUID(title, uid string) string {
+	if title == "" {
+		return uid
+	}
+	return title
 }
 
 func toNoteViewData(np page.NotePage) noteViewData {
@@ -469,39 +468,4 @@ func slugify(s string) string {
 	s = nonAlphanumeric.ReplaceAllString(s, "-")
 	s = strings.Trim(s, "-")
 	return s
-}
-
-func cleanTitle(title, fallback string) string {
-	t := strings.ReplaceAll(title, "`", "")
-	t = strings.Trim(t, `"`)
-	if t == "" {
-		return fallback
-	}
-	return t
-}
-
-// trimQuotes removes surrounding double quotes from a YAML value.
-// The notescli hand-rolled parser doesn't strip YAML string quotes.
-func trimQuotes(s string) string {
-	return strings.Trim(s, `"`)
-}
-
-// trimQuotesList removes surrounding double quotes from each value in a list.
-func trimQuotesList(vals []string) []string {
-	result := make([]string, len(vals))
-	for i, v := range vals {
-		result[i] = trimQuotes(v)
-	}
-	return result
-}
-
-func parseDate(dateStr string) time.Time {
-	if len(dateStr) < 8 {
-		return time.Time{}
-	}
-	t, err := time.Parse("20060102", dateStr[:8])
-	if err != nil {
-		return time.Time{}
-	}
-	return t
 }
