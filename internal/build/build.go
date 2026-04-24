@@ -357,7 +357,7 @@ func buildNotePages(entries []note.Entry, siteRootURL string) ([]page.NotePage, 
 	index := make(map[int]string, len(entries))
 	for _, e := range entries {
 		uid := e.Meta.CreatedAt.Format("20060102") + "_" + strconv.Itoa(e.ID)
-		slug := chooseSlug(e, uid)
+		slug := chooseSlug(e)
 		np := page.NotePage{
 			UID:         uid,
 			ShortUID:    strconv.Itoa(e.ID),
@@ -376,7 +376,7 @@ func buildNotePages(entries []note.Entry, siteRootURL string) ([]page.NotePage, 
 
 // chooseSlug returns the slug to use for e, falling back from Meta.Slug to
 // slugified Meta.Title to the entry's ID.
-func chooseSlug(e note.Entry, uid string) string {
+func chooseSlug(e note.Entry) string {
 	if s := slugify(e.Meta.Slug); s != "" {
 		return s
 	}
@@ -467,5 +467,3 @@ func slugify(s string) string {
 	s = strings.Trim(s, "-")
 	return s
 }
-
-
