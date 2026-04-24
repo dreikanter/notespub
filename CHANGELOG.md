@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.14] - 2026-04-24
+
+### Changed
+
+- Bump CHANGELOG heading to `0.1.14` to resync with existing git tags. The prior auto-patch workflow had advanced tags to `v0.1.13` while `CHANGELOG.md` was seeded at `0.1.7`, so the first run of the CHANGELOG-driven workflow skipped with "Tag v0.1.7 already exists". Picking up one past the highest existing tag restores the invariant that `CHANGELOG.md` leads the tag.
+
 ## [0.1.7] - 2026-04-24
 
 ### Changed
