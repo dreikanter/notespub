@@ -7,65 +7,53 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCacheHit(t *testing.T) {
 	dir := t.TempDir()
-	indexPath := filepath.Join(dir, "index.json")
 	idx := map[string]Entry{
 		"https://example.com/img.jpg": {FileName: "abc.jpg", PageUID: "20230130_3961"},
 	}
-	data, _ := json.MarshalIndent(idx, "", "  ")
-	os.WriteFile(indexPath, data, 0o644)
+	data, err := json.MarshalIndent(idx, "", "  ")
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "index.json"), data, 0o644))
 
 	// Create the cached file so CopyTo won't fail.
 	uidDir := filepath.Join(dir, "20230130_3961")
-	os.MkdirAll(uidDir, 0o755)
-	os.WriteFile(filepath.Join(uidDir, "abc.jpg"), []byte("fake image"), 0o644)
+	require.NoError(t, os.MkdirAll(uidDir, 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(uidDir, "abc.jpg"), []byte("fake image"), 0o644))
 
 	cache := NewCache(dir)
 	entry, err := cache.Get("https://example.com/img.jpg", "20230130_3961")
-	if err != nil {
-		t.Fatalf("Get() error: %v", err)
-	}
-	if entry.FileName != "abc.jpg" {
-		t.Errorf("FileName = %q, want abc.jpg", entry.FileName)
-	}
+	require.NoError(t, err)
+
+	assert.Equal(t, "abc.jpg", entry.FileName)
 }
 
 func TestCacheMissDownloads(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "image/jpeg")
-		w.Write([]byte("fake jpeg data"))
+		_, _ = w.Write([]byte("fake jpeg data"))
 	}))
 	defer ts.Close()
 
 	dir := t.TempDir()
 	cache := NewCache(dir)
 	entry, err := cache.Get(ts.URL+"/photo.jpg", "20230130_3961")
-	if err != nil {
-		t.Fatalf("Get() error: %v", err)
-	}
-	if entry.FileName == "" {
-		t.Error("expected non-empty FileName")
-	}
-	if entry.PageUID != "20230130_3961" {
-		t.Errorf("PageUID = %q, want 20230130_3961", entry.PageUID)
-	}
+	require.NoError(t, err)
 
-	// Verify file was written.
-	cached := filepath.Join(dir, "20230130_3961", entry.FileName)
-	if _, err := os.Stat(cached); err != nil {
-		t.Errorf("cached file not found: %v", err)
-	}
+	assert.NotEmpty(t, entry.FileName)
+	assert.Equal(t, "20230130_3961", entry.PageUID)
+	assert.FileExists(t, filepath.Join(dir, "20230130_3961", entry.FileName))
 
-	// Verify index was updated.
-	indexData, _ := os.ReadFile(filepath.Join(dir, "index.json"))
+	indexData, err := os.ReadFile(filepath.Join(dir, "index.json"))
+	require.NoError(t, err)
 	var idx map[string]Entry
-	json.Unmarshal(indexData, &idx)
-	if _, ok := idx[ts.URL+"/photo.jpg"]; !ok {
-		t.Error("expected URL in index.json")
-	}
+	require.NoError(t, json.Unmarshal(indexData, &idx))
+	assert.Contains(t, idx, ts.URL+"/photo.jpg")
 }
 
 func TestCleanshotRedirect(t *testing.T) {
@@ -77,7 +65,7 @@ func TestCleanshotRedirect(t *testing.T) {
 			w.WriteHeader(http.StatusFound)
 		case r.URL.Path == "/direct/photo.jpg":
 			w.Header().Set("Content-Type", "image/png")
-			w.Write([]byte("png data"))
+			_, _ = w.Write([]byte("png data"))
 		}
 	}))
 	defer ts.Close()
@@ -86,33 +74,22 @@ func TestCleanshotRedirect(t *testing.T) {
 	dir := t.TempDir()
 	cache := NewCache(dir)
 	entry, err := cache.Get(ts.URL+"/share/abc", "20230130_3961")
-	if err != nil {
-		t.Fatalf("Get() error: %v", err)
-	}
-	if entry.FileName == "" {
-		t.Error("expected non-empty FileName")
-	}
+	require.NoError(t, err)
+
+	assert.NotEmpty(t, entry.FileName)
 }
 
 func TestCopyTo(t *testing.T) {
 	dir := t.TempDir()
 	uidDir := filepath.Join(dir, "20230130_3961")
-	os.MkdirAll(uidDir, 0o755)
-	os.WriteFile(filepath.Join(uidDir, "abc.jpg"), []byte("image data"), 0o644)
+	require.NoError(t, os.MkdirAll(uidDir, 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(uidDir, "abc.jpg"), []byte("image data"), 0o644))
 
 	cache := NewCache(dir)
 	destDir := t.TempDir()
-	err := cache.CopyTo(Entry{FileName: "abc.jpg", PageUID: "20230130_3961"}, destDir)
-	if err != nil {
-		t.Fatalf("CopyTo() error: %v", err)
-	}
+	require.NoError(t, cache.CopyTo(Entry{FileName: "abc.jpg", PageUID: "20230130_3961"}, destDir))
 
-	destFile := filepath.Join(destDir, "abc.jpg")
-	data, err := os.ReadFile(destFile)
-	if err != nil {
-		t.Fatalf("ReadFile() error: %v", err)
-	}
-	if string(data) != "image data" {
-		t.Errorf("data = %q, want 'image data'", data)
-	}
+	data, err := os.ReadFile(filepath.Join(destDir, "abc.jpg"))
+	require.NoError(t, err)
+	assert.Equal(t, "image data", string(data))
 }

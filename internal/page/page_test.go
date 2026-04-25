@@ -3,6 +3,8 @@ package page
 import (
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNotePageLocalPath(t *testing.T) {
@@ -10,10 +12,8 @@ func TestNotePageLocalPath(t *testing.T) {
 		UID:  "20230130_3961",
 		Slug: "rails-devise-manual-password-change",
 	}
-	want := "20230130_3961/rails-devise-manual-password-change/index.html"
-	if got := p.LocalPath(); got != want {
-		t.Errorf("LocalPath() = %q, want %q", got, want)
-	}
+
+	assert.Equal(t, "20230130_3961/rails-devise-manual-password-change/index.html", p.LocalPath())
 }
 
 func TestNotePageURL(t *testing.T) {
@@ -22,10 +22,8 @@ func TestNotePageURL(t *testing.T) {
 		Slug:        "rails-devise-manual-password-change",
 		SiteRootURL: "https://notes.musayev.com",
 	}
-	want := "https://notes.musayev.com/20230130_3961/rails-devise-manual-password-change"
-	if got := p.URL(); got != want {
-		t.Errorf("URL() = %q, want %q", got, want)
-	}
+
+	assert.Equal(t, "https://notes.musayev.com/20230130_3961/rails-devise-manual-password-change", p.URL())
 }
 
 func TestNotePagePublicPath(t *testing.T) {
@@ -33,28 +31,22 @@ func TestNotePagePublicPath(t *testing.T) {
 		UID:  "20230130_3961",
 		Slug: "rails-devise-manual-password-change",
 	}
-	want := "20230130_3961/rails-devise-manual-password-change"
-	if got := p.PublicPath(); got != want {
-		t.Errorf("PublicPath() = %q, want %q", got, want)
-	}
+
+	assert.Equal(t, "20230130_3961/rails-devise-manual-password-change", p.PublicPath())
 }
 
 func TestRedirectPageLocalPath(t *testing.T) {
 	p := RedirectPage{
 		UID: "20230130_3961",
 	}
-	want := "20230130_3961/index.html"
-	if got := p.LocalPath(); got != want {
-		t.Errorf("LocalPath() = %q, want %q", got, want)
-	}
+
+	assert.Equal(t, "20230130_3961/index.html", p.LocalPath())
 }
 
 func TestTagPageLocalPath(t *testing.T) {
 	p := TagPage{Tag: "golang"}
-	want := "tags/golang/index.html"
-	if got := p.LocalPath(); got != want {
-		t.Errorf("LocalPath() = %q, want %q", got, want)
-	}
+
+	assert.Equal(t, "tags/golang/index.html", p.LocalPath())
 }
 
 func TestSortNotePages(t *testing.T) {
@@ -63,11 +55,9 @@ func TestSortNotePages(t *testing.T) {
 		{UID: "20230725_4324", PublishedAt: time.Date(2023, 7, 25, 0, 0, 0, 0, time.UTC)},
 		{UID: "20230620_4164", PublishedAt: time.Date(2023, 6, 20, 0, 0, 0, 0, time.UTC)},
 	}
+
 	SortNotePages(pages)
-	if pages[0].UID != "20230725_4324" {
-		t.Errorf("pages[0].UID = %q, want 20230725_4324 (newest first)", pages[0].UID)
-	}
-	if pages[2].UID != "20230130_3961" {
-		t.Errorf("pages[2].UID = %q, want 20230130_3961 (oldest last)", pages[2].UID)
-	}
+
+	assert.Equal(t, "20230725_4324", pages[0].UID)
+	assert.Equal(t, "20230130_3961", pages[2].UID)
 }

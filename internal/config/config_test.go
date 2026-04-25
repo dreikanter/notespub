@@ -4,188 +4,123 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
+func writeConfig(t *testing.T, content string) string {
+	t.Helper()
+
+	yamlPath := filepath.Join(t.TempDir(), DefaultConfigFile)
+	require.NoError(t, os.WriteFile(yamlPath, []byte(content), 0o644))
+	return yamlPath
+}
+
 func TestLoadFromYAML(t *testing.T) {
-	dir := t.TempDir()
-	yamlPath := filepath.Join(dir, DefaultConfigFile)
-	err := os.WriteFile(yamlPath, []byte(`
+	yamlPath := writeConfig(t, `
 notes_path: "/tmp/notes"
 assets_path: "/tmp/assets"
 build_path: "./dist"
 site_root_url: "https://example.com"
 site_name: "Test Site"
 author_name: "Test Author"
-`), 0o644)
-	if err != nil {
-		t.Fatal(err)
-	}
+`)
 
 	cfg, err := Load(yamlPath, nil)
-	if err != nil {
-		t.Fatalf("Load() error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if cfg.NotesPath != "/tmp/notes" {
-		t.Errorf("NotesPath = %q, want /tmp/notes", cfg.NotesPath)
-	}
-	if cfg.AssetsPath != "/tmp/assets" {
-		t.Errorf("AssetsPath = %q, want /tmp/assets", cfg.AssetsPath)
-	}
-	if cfg.BuildPath != "./dist" {
-		t.Errorf("BuildPath = %q, want ./dist", cfg.BuildPath)
-	}
-	if cfg.SiteRootURL != "https://example.com" {
-		t.Errorf("SiteRootURL = %q, want https://example.com", cfg.SiteRootURL)
-	}
-	if cfg.SiteName != "Test Site" {
-		t.Errorf("SiteName = %q, want Test Site", cfg.SiteName)
-	}
-	if cfg.AuthorName != "Test Author" {
-		t.Errorf("AuthorName = %q, want Test Author", cfg.AuthorName)
-	}
+	assert.Equal(t, "/tmp/notes", cfg.NotesPath)
+	assert.Equal(t, "/tmp/assets", cfg.AssetsPath)
+	assert.Equal(t, "./dist", cfg.BuildPath)
+	assert.Equal(t, "https://example.com", cfg.SiteRootURL)
+	assert.Equal(t, "Test Site", cfg.SiteName)
+	assert.Equal(t, "Test Author", cfg.AuthorName)
 }
 
 func TestFlagOverridesYAML(t *testing.T) {
-	dir := t.TempDir()
-	yamlPath := filepath.Join(dir, DefaultConfigFile)
-	err := os.WriteFile(yamlPath, []byte(`
+	yamlPath := writeConfig(t, `
 notes_path: "/tmp/notes"
 assets_path: "/tmp/assets"
 build_path: "./dist"
 site_root_url: "https://example.com"
 site_name: "Test Site"
 author_name: "Test Author"
-`), 0o644)
-	if err != nil {
-		t.Fatal(err)
-	}
+`)
 
-	flagOverrides := map[string]string{
-		"notes": "/flag/notes",
-	}
+	cfg, err := Load(yamlPath, map[string]string{"notes": "/flag/notes"})
+	require.NoError(t, err)
 
-	cfg, err := Load(yamlPath, flagOverrides)
-	if err != nil {
-		t.Fatalf("Load() error: %v", err)
-	}
-
-	if cfg.NotesPath != "/flag/notes" {
-		t.Errorf("NotesPath = %q, want /flag/notes", cfg.NotesPath)
-	}
+	assert.Equal(t, "/flag/notes", cfg.NotesPath)
 }
 
 func TestLoadMissingRequiredField(t *testing.T) {
-	dir := t.TempDir()
-	yamlPath := filepath.Join(dir, DefaultConfigFile)
-	err := os.WriteFile(yamlPath, []byte(`
+	yamlPath := writeConfig(t, `
 notes_path: "/tmp/notes"
-`), 0o644)
-	if err != nil {
-		t.Fatal(err)
-	}
+`)
 
-	_, err = Load(yamlPath, nil)
-	if err == nil {
-		t.Fatal("Load() expected error for missing required fields, got nil")
-	}
+	_, err := Load(yamlPath, nil)
+	require.Error(t, err)
 }
 
 func TestAssetsPathDefaultsToNotesImages(t *testing.T) {
-	dir := t.TempDir()
-	yamlPath := filepath.Join(dir, DefaultConfigFile)
-	err := os.WriteFile(yamlPath, []byte(`
+	yamlPath := writeConfig(t, `
 notes_path: "/tmp/notes"
 build_path: "./dist"
 site_root_url: "https://example.com"
 site_name: "Test Site"
 author_name: "Test Author"
-`), 0o644)
-	if err != nil {
-		t.Fatal(err)
-	}
+`)
 
 	cfg, err := Load(yamlPath, nil)
-	if err != nil {
-		t.Fatalf("Load() error: %v", err)
-	}
+	require.NoError(t, err)
 
-	want := filepath.Join("/tmp/notes", "images")
-	if cfg.AssetsPath != want {
-		t.Errorf("AssetsPath = %q, want %q", cfg.AssetsPath, want)
-	}
+	assert.Equal(t, filepath.Join("/tmp/notes", "images"), cfg.AssetsPath)
 }
 
 func TestBuildPathDefaultsToDist(t *testing.T) {
-	dir := t.TempDir()
-	yamlPath := filepath.Join(dir, DefaultConfigFile)
-	err := os.WriteFile(yamlPath, []byte(`
+	yamlPath := writeConfig(t, `
 notes_path: "/tmp/notes"
 site_root_url: "https://example.com"
 site_name: "Test Site"
 author_name: "Test Author"
-`), 0o644)
-	if err != nil {
-		t.Fatal(err)
-	}
+`)
 
 	cfg, err := Load(yamlPath, nil)
-	if err != nil {
-		t.Fatalf("Load() error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if cfg.BuildPath != "./dist" {
-		t.Errorf("BuildPath = %q, want ./dist", cfg.BuildPath)
-	}
+	assert.Equal(t, "./dist", cfg.BuildPath)
 }
 
 func TestNotesPathDefaultsToEnvVar(t *testing.T) {
-	dir := t.TempDir()
-	yamlPath := filepath.Join(dir, DefaultConfigFile)
-	err := os.WriteFile(yamlPath, []byte(`
+	yamlPath := writeConfig(t, `
 build_path: "./dist"
 site_root_url: "https://example.com"
 site_name: "Test Site"
 author_name: "Test Author"
-`), 0o644)
-	if err != nil {
-		t.Fatal(err)
-	}
-
+`)
 	t.Setenv("NOTES_PATH", "/env/notes")
 
 	cfg, err := Load(yamlPath, nil)
-	if err != nil {
-		t.Fatalf("Load() error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if cfg.NotesPath != "/env/notes" {
-		t.Errorf("NotesPath = %q, want /env/notes", cfg.NotesPath)
-	}
+	assert.Equal(t, "/env/notes", cfg.NotesPath)
 }
 
 func TestExpandHomePath(t *testing.T) {
-	dir := t.TempDir()
-	yamlPath := filepath.Join(dir, DefaultConfigFile)
-	err := os.WriteFile(yamlPath, []byte(`
+	yamlPath := writeConfig(t, `
 notes_path: "~/notes"
 assets_path: "~/assets"
 build_path: "./dist"
 site_root_url: "https://example.com"
 site_name: "Test Site"
 author_name: "Test Author"
-`), 0o644)
-	if err != nil {
-		t.Fatal(err)
-	}
+`)
 
 	cfg, err := Load(yamlPath, nil)
-	if err != nil {
-		t.Fatalf("Load() error: %v", err)
-	}
+	require.NoError(t, err)
 
-	home, _ := os.UserHomeDir()
-	if cfg.NotesPath != filepath.Join(home, "notes") {
-		t.Errorf("NotesPath = %q, want %s/notes", cfg.NotesPath, home)
-	}
+	home, err := os.UserHomeDir()
+	require.NoError(t, err)
+	assert.Equal(t, filepath.Join(home, "notes"), cfg.NotesPath)
 }

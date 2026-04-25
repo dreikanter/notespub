@@ -3,102 +3,75 @@ package main
 import (
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/dreikanter/npub/internal/config"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestInitConfigCreatesSampleInNewDirectory(t *testing.T) {
 	target := filepath.Join(t.TempDir(), "site")
 
 	cfgPath, err := initConfig(target)
-	if err != nil {
-		t.Fatalf("initConfig() error = %v", err)
-	}
+	require.NoError(t, err)
 
 	wantPath := filepath.Join(target, config.DefaultConfigFile)
-	if cfgPath != wantPath {
-		t.Fatalf("initConfig() path = %q, want %q", cfgPath, wantPath)
-	}
+	require.Equal(t, wantPath, cfgPath)
 
 	data, err := os.ReadFile(cfgPath)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	content := string(data)
 	for _, want := range []string{
 		`# notes_path: ""`,
 		`# build_path: "./dist"`,
 		`# license_name: "CC BY 4.0"`,
 	} {
-		if !strings.Contains(content, want) {
-			t.Errorf("generated config missing %q", want)
-		}
+		assert.Contains(t, content, want)
 	}
 }
 
 func TestInitConfigDefaultsToCurrentDirectory(t *testing.T) {
 	dir := t.TempDir()
 	oldWd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.Chdir(oldWd)
-	if err := os.Chdir(dir); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, os.Chdir(oldWd)) })
+	require.NoError(t, os.Chdir(dir))
 
 	cfgPath, err := initConfig(".")
-	if err != nil {
-		t.Fatalf("initConfig() error = %v", err)
-	}
-	if cfgPath != config.DefaultConfigFile {
-		t.Fatalf("initConfig() path = %q", cfgPath)
-	}
-	if _, err := os.Stat(filepath.Join(dir, config.DefaultConfigFile)); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
+	assert.Equal(t, config.DefaultConfigFile, cfgPath)
+	assert.FileExists(t, filepath.Join(dir, config.DefaultConfigFile))
 }
 
 func TestInitConfigDoesNotOverwriteExistingConfig(t *testing.T) {
 	dir := t.TempDir()
 	cfgPath := filepath.Join(dir, config.DefaultConfigFile)
-	if err := os.WriteFile(cfgPath, []byte("existing"), 0o644); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, os.WriteFile(cfgPath, []byte("existing"), 0o644))
 
-	if _, err := initConfig(dir); err == nil {
-		t.Fatal("initConfig() error = nil, want error")
-	}
+	_, err := initConfig(dir)
+	require.Error(t, err)
 
 	data, err := os.ReadFile(cfgPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(data) != "existing" {
-		t.Fatalf("existing config overwritten: %q", data)
-	}
+	require.NoError(t, err)
+	assert.Equal(t, "existing", string(data))
 }
 
 func TestInitConfigRejectsNonDirectoryPath(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "not-a-directory")
-	if err := os.WriteFile(path, []byte("file"), 0o644); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, os.WriteFile(path, []byte("file"), 0o644))
 
-	if _, err := initConfig(path); err == nil {
-		t.Fatal("initConfig() error = nil, want error")
-	}
+	_, err := initConfig(path)
+	require.Error(t, err)
 }
 
 func TestResolveConfigPath(t *testing.T) {
-	home, _ := os.UserHomeDir()
+	home, err := os.UserHomeDir()
+	require.NoError(t, err)
 
 	notesDir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(notesDir, config.DefaultConfigFile), []byte("---\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, os.WriteFile(filepath.Join(notesDir, config.DefaultConfigFile), []byte("---\n"), 0o644))
 	emptyNotesDir := t.TempDir()
 
 	tests := []struct {
@@ -169,17 +142,15 @@ func TestResolveConfigPath(t *testing.T) {
 			for k, v := range tt.env {
 				t.Setenv(k, v)
 			}
-			got := resolveConfigPath(tt.flagValue, tt.envValue, tt.notesPath)
-			if got != tt.want {
-				t.Errorf("resolveConfigPath(%q, %q, %q) = %q, want %q",
-					tt.flagValue, tt.envValue, tt.notesPath, got, tt.want)
-			}
+
+			assert.Equal(t, tt.want, resolveConfigPath(tt.flagValue, tt.envValue, tt.notesPath))
 		})
 	}
 }
 
 func TestExpandHome(t *testing.T) {
-	home, _ := os.UserHomeDir()
+	home, err := os.UserHomeDir()
+	require.NoError(t, err)
 
 	tests := []struct {
 		name string
@@ -215,10 +186,7 @@ func TestExpandHome(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := expandHome(tt.path)
-			if got != tt.want {
-				t.Errorf("expandHome(%q) = %q, want %q", tt.path, got, tt.want)
-			}
+			assert.Equal(t, tt.want, expandHome(tt.path))
 		})
 	}
 }
