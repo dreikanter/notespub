@@ -1,13 +1,13 @@
-# notespub Design
+# npub Design
 
 Date: 2026-03-29
 
 ## Overview
 
-`notespub` is a standalone Go binary that builds a static site from a local notes store and serves it locally for preview. It replaces the existing Ruby-based site builder with a single portable binary installable via `go install`.
+`npub` is a standalone Go binary that builds a static site from a local notes store and serves it locally for preview. It replaces the existing Ruby-based site builder with a single portable binary installable via `go install`.
 
 ```
-go install github.com/dreikanter/notespub@latest
+go install github.com/dreikanter/npub@latest
 ```
 
 ## Goals
@@ -20,13 +20,13 @@ go install github.com/dreikanter/notespub@latest
 
 ## Prerequisite
 
-Requires `notescli` frontmatter extension (see `notescli` spec `2026-03-29-frontmatter-extension-design.md`) to be implemented and released first. `notespub` imports `github.com/dreikanter/notescli/note` and uses `note.ParseFrontmatterFields` for all frontmatter access — all required fields (`public`, `slug`, `title`, `tags`, `description`) are covered by `FrontmatterFields`.
+Requires `notescli` frontmatter extension (see `notescli` spec `2026-03-29-frontmatter-extension-design.md`) to be implemented and released first. `npub` imports `github.com/dreikanter/notescli/note` and uses `note.ParseFrontmatterFields` for all frontmatter access — all required fields (`public`, `slug`, `title`, `tags`, `description`) are covered by `FrontmatterFields`.
 
 ## Commands
 
 ```
-notespub build [--config notespub.yml] [--out ./dist]
-notespub serve [--dir ./dist] [--port 4000]
+npub build [--config npub.yml] [--out ./dist]
+npub serve [--dir ./dist] [--port 4000]
 ```
 
 ### `build`
@@ -43,26 +43,26 @@ Serves an already-built `build_path` over `localhost` using `net/http`. Does not
 
 ## Configuration
 
-Three-layer precedence: **flags > env vars > `notespub.yml`**
+Three-layer precedence: **flags > env vars > `npub.yml`**
 
 | Key | Flag | Env var | Default |
 |---|---|---|---|
 | `notes_path` | `--notes-path` | `NOTES_PATH` | `~/notes` |
-| `assets_path` | `--assets-path` | `NOTESPUB_ASSETS_PATH` | `~/notespub-assets` |
-| `build_path` | `--out` | `NOTESPUB_BUILD_PATH` | `./dist` |
-| `site_root_url` | `--url` | `NOTESPUB_SITE_ROOT_URL` | — (required) |
-| `site_name` | `--site-name` | `NOTESPUB_SITE_NAME` | — (required) |
-| `author_name` | `--author` | `NOTESPUB_AUTHOR_NAME` | — (required) |
+| `assets_path` | `--assets-path` | `NPUB_ASSETS_PATH` | `~/npub-assets` |
+| `build_path` | `--out` | `NPUB_BUILD_PATH` | `./dist` |
+| `site_root_url` | `--url` | `NPUB_SITE_ROOT_URL` | — (required) |
+| `site_name` | `--site-name` | `NPUB_SITE_NAME` | — (required) |
+| `author_name` | `--author` | `NPUB_AUTHOR_NAME` | — (required) |
 
 `NOTES_PATH` is shared with `notescli` — set once, works for both tools.
 
-Config file location: `./notespub.yml` by default, overridable via `--config` or `NOTESPUB_CONFIG`.
+Config file location: `./npub.yml` by default, overridable via `--config` or `NPUB_CONFIG`.
 
 ## Project Structure
 
 ```
-notespub/
-  cmd/notespub/
+npub/
+  cmd/npub/
     main.go
   internal/
     build/        — site builder: orchestrates pages, renders, writes dist/
@@ -169,11 +169,11 @@ End users running `go install` get the pre-compiled CSS baked in — no Node req
 ```makefile
 build:      ## Compile CSS then build binary
     npx tailwindcss -i stylesheets/main.css -o style.css --minify
-    go build ./cmd/notespub
+    go build ./cmd/npub
 
 dev:        ## Watch mode: recompile on changes
     npx tailwindcss -i stylesheets/main.css -o style.css --watch &
-    go build ./cmd/notespub
+    go build ./cmd/npub
 
 test:
     go test ./...

@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"github.com/dreikanter/notes-cli/note"
-	notespub "github.com/dreikanter/notes-pub"
-	"github.com/dreikanter/notes-pub/internal/build"
-	"github.com/dreikanter/notes-pub/internal/config"
+	"github.com/dreikanter/npub"
+	"github.com/dreikanter/npub/internal/build"
+	"github.com/dreikanter/npub/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -26,7 +26,7 @@ func main() {
 }
 
 var rootCmd = &cobra.Command{
-	Use:   "notespub",
+	Use:   "npub",
 	Short: "Build a static site from a local notes store",
 }
 
@@ -42,7 +42,7 @@ var buildCmd = &cobra.Command{
 
 		log.Printf("building site from %s to %s", cfg.NotesPath, cfg.BuildPath)
 		store := note.NewOSStore(cfg.NotesPath)
-		if err := build.Build(store, cfg, notespub.TemplateFS, notespub.StyleCSS); err != nil {
+		if err := build.Build(store, cfg, npub.TemplateFS, npub.StyleCSS); err != nil {
 			return fmt.Errorf("build failed: %w", err)
 		}
 		log.Println("build complete")
@@ -90,7 +90,7 @@ func loadConfig(cmd *cobra.Command, cfgPath string) (config.Config, error) {
 	if notesPath == "" {
 		notesPath = os.Getenv("NOTES_PATH")
 	}
-	cfgPath = resolveConfigPath(cfgPath, os.Getenv("NOTESPUB_CONFIG"), notesPath)
+	cfgPath = resolveConfigPath(cfgPath, os.Getenv("NPUB_CONFIG"), notesPath)
 
 	flagNames := []string{"notes", "assets", "out", "static", "url", "site-name", "author", "license-name", "license-url"}
 	flagOverrides := make(map[string]string)
@@ -121,7 +121,7 @@ func init() {
 	}
 	rootCmd.Version = Version
 
-	buildCmd.Flags().String("config", "", "config file path (default: notespub.yml)")
+	buildCmd.Flags().String("config", "", "config file path (default: npub.yml)")
 	buildCmd.Flags().String("notes", "", "notes store path")
 	buildCmd.Flags().String("assets", "", "image assets path")
 	buildCmd.Flags().String("out", "", "output directory (default: ./dist)")

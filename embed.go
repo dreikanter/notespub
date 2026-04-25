@@ -1,4 +1,4 @@
-package notespub
+package npub
 
 import "embed"
 

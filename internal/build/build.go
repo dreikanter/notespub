@@ -15,10 +15,10 @@ import (
 	texttemplate "text/template"
 
 	"github.com/dreikanter/notes-cli/note"
-	"github.com/dreikanter/notes-pub/internal/config"
-	"github.com/dreikanter/notes-pub/internal/images"
-	"github.com/dreikanter/notes-pub/internal/page"
-	"github.com/dreikanter/notes-pub/internal/render"
+	"github.com/dreikanter/npub/internal/config"
+	"github.com/dreikanter/npub/internal/images"
+	"github.com/dreikanter/npub/internal/page"
+	"github.com/dreikanter/npub/internal/render"
 )
 
 // layoutData is the top-level data passed to layout.html.

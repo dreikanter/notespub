@@ -1,4 +1,4 @@
-# notespub
+# npub
 
 A static site builder for Markdown notes. Reads notes from a local directory, renders them to HTML with syntax highlighting, and outputs a complete static site with tag pages and an Atom feed.
 
@@ -10,7 +10,7 @@ A static site builder for Markdown notes. Reads notes from a local directory, re
 ## Install
 
 ```sh
-go install github.com/dreikanter/notes-pub/cmd/notespub@latest
+go install github.com/dreikanter/npub/cmd/npub@latest
 ```
 
 ## Build
@@ -22,11 +22,11 @@ npm install
 make build
 ```
 
-`npm install` is only needed once (or when dependencies change). `make build` compiles the Tailwind CSS stylesheet and builds the `notespub` binary.
+`npm install` is only needed once (or when dependencies change). `make build` compiles the Tailwind CSS stylesheet and builds the `npub` binary.
 
 ## Configuration
 
-Create a `notespub.yml` file:
+Create a `npub.yml` file:
 
 ```yaml
 notes_path: "~/notes"
@@ -56,11 +56,11 @@ Priority: CLI flags > YAML config.
 Config file discovery order:
 
 1. `--config` flag
-2. `NOTESPUB_CONFIG` env var
-3. `notespub.yml` inside `$NOTES_PATH` (or `--notes` value) if it exists
-4. `notespub.yml` in the current directory
+2. `NPUB_CONFIG` env var
+3. `npub.yml` inside `$NOTES_PATH` (or `--notes` value) if it exists
+4. `npub.yml` in the current directory
 
-See `notespub.sample.yml` in the repo for a starting template.
+See `npub.sample.yml` in the repo for a starting template.
 
 The optional `intro` field renders as a paragraph above the posts list on the index page. Leave it empty or unset to omit.
 
@@ -77,13 +77,13 @@ Files in the `static` subdirectory of `notes_path` are copied as-is to the build
 Build the site:
 
 ```sh
-notespub build
+npub build
 ```
 
 Serve locally:
 
 ```sh
-notespub serve
+npub serve
 ```
 
 The `serve` command starts a local HTTP server on port 4000 (override with `--port`), serving from `dist` (override with `--dir`).

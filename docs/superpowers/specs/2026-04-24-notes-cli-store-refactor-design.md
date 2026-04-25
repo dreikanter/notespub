@@ -1,18 +1,18 @@
-# notes-pub: adopt notes-cli Store interface
+# npub: adopt notes-cli Store interface
 
 **Date:** 2026-04-24
 **Status:** Approved — ready for implementation planning
 
 ## Goal
 
-Replace notes-pub's direct use of the `note.Scan` / `note.ParseFrontmatterFields` / `note.StripFrontmatter` free functions from notes-cli v0.1.66 with the new `note.Store` interface (available in notes-cli v0.3.20 and later). The Store is passed into `Build` as an explicit dependency, and build tests migrate to `note.MemStore` so they no longer need filesystem fixtures.
+Replace npub's direct use of the `note.Scan` / `note.ParseFrontmatterFields` / `note.StripFrontmatter` free functions from notes-cli v0.1.66 with the new `note.Store` interface (available in notes-cli v0.3.20 and later). The Store is passed into `Build` as an explicit dependency, and build tests migrate to `note.MemStore` so they no longer need filesystem fixtures.
 
 ## Non-goals
 
 - No changes to templates, routing, rendered output, image cache, or CLI flags.
 - No new features.
 - No refactoring of `render`, `page`, `images`, or `config` packages beyond what the Store swap directly requires.
-- No new abstraction layer inside notes-pub. The notes-cli `Store` interface is used directly; notes-pub does not define its own wrapper interface.
+- No new abstraction layer inside npub. The notes-cli `Store` interface is used directly; npub does not define its own wrapper interface.
 
 ## Dependency bump
 
@@ -22,7 +22,7 @@ Replace notes-pub's direct use of the `note.Scan` / `note.ParseFrontmatterFields
 ## Architecture
 
 ```
-cmd/notespub/main.go
+cmd/npub/main.go
    │  store := note.NewOSStore(cfg.NotesPath)
    │  build.Build(store, cfg, templateFS, styleCSS)
    ▼
@@ -137,15 +137,15 @@ Rendering (`render.Render` loop) stays in `Build` because it needs `imgCache` an
 
 Inside `render.Render`, markdown link targets like `[see](3962)` are parsed strings; convert with `strconv.Atoi` at lookup. Non-numeric targets fall through to unchanged behavior. Existing `render_test.go` cases need their `noteIndex` map keys updated from `"3962"` → `3962`.
 
-Image processing callback stays in notes-pub — it is a publishing concern, not a storage concern, and does not belong upstream in notes-cli.
+Image processing callback stays in npub — it is a publishing concern, not a storage concern, and does not belong upstream in notes-cli.
 
 ## Sort order
 
-`store.All` returns entries newest-first (for OSStore: by filename `date DESC, id DESC`; for MemStore: by `Meta.CreatedAt` DESC). notes-pub's current `page.SortNotePages(notePages)` after rendering sorts by `PublishedAt` DESC — same order, so the explicit sort becomes redundant. **Keep the explicit sort** anyway: it is cheap, defensive, and makes the order guarantee local to `Build` rather than relying on the Store implementation's ordering.
+`store.All` returns entries newest-first (for OSStore: by filename `date DESC, id DESC`; for MemStore: by `Meta.CreatedAt` DESC). npub's current `page.SortNotePages(notePages)` after rendering sorts by `PublishedAt` DESC — same order, so the explicit sort becomes redundant. **Keep the explicit sort** anyway: it is cheap, defensive, and makes the order guarantee local to `Build` rather than relying on the Store implementation's ordering.
 
 ## CLI wiring
 
-`cmd/notespub/main.go`: construct the store before calling `Build`:
+`cmd/npub/main.go`: construct the store before calling `Build`:
 
 ```go
 store := note.NewOSStore(cfg.NotesPath)
@@ -197,7 +197,7 @@ Build(store, cfg, templateFS, styleCSS)
 
 No new error paths. The existing wrapper `fmt.Errorf("scanning notes: %w", err)` is renamed to `"reading notes: %w"` to match the new semantics (it's a Store call, not a filesystem scan).
 
-`store.All` errors surface via `%w`. `store.Put` / `store.Get` / `store.Delete` are not used by notes-pub — it is read-only.
+`store.All` errors surface via `%w`. `store.Put` / `store.Get` / `store.Delete` are not used by npub — it is read-only.
 
 ## Migration order (single PR)
 
@@ -208,9 +208,9 @@ No new error paths. The existing wrapper `fmt.Errorf("scanning notes: %w", err)`
    - Extract `buildNotePages` + `chooseSlug` + `titleOrUID` helpers.
    - Delete `parseDate`, `trimQuotes`, `trimQuotesList`, `parsedNote`.
 4. Change `Build` signature to `Build(store note.Store, cfg config.Config, templateFS fs.FS, styleCSS []byte) error`.
-5. Update `cmd/notespub/main.go` to construct `note.NewOSStore(cfg.NotesPath)` and pass it in.
+5. Update `cmd/npub/main.go` to construct `note.NewOSStore(cfg.NotesPath)` and pass it in.
 6. Migrate the three Build tests to `MemStore`.
-7. `go test ./...` + manual `notespub build` against a real notes directory as a smoke test.
+7. `go test ./...` + manual `npub build` against a real notes directory as a smoke test.
 
 ## Risks
 
@@ -218,11 +218,11 @@ No new error paths. The existing wrapper `fmt.Errorf("scanning notes: %w", err)`
 
 **`Entry.Body` is `string`, render path currently takes `[]byte`.** Trivial cast at the `render.Render` boundary; no real risk.
 
-**Hashtag tag merging.** `OSStore` merges frontmatter `tags` with body `#hashtag` tokens into `Meta.Tags`. notes-pub's current behavior only reads frontmatter tags. This is a behavior change for any note that uses body hashtags. Mitigation: note in PR description; verify on a real build whether existing notes depend on this being absent. If it is a problem, add an explicit filter in `buildNotePages` that keeps only frontmatter-source tags — but this requires a notes-cli API to distinguish them, which does not currently exist, so accept the behavior change for now and reconsider if it causes real-world issues.
+**Hashtag tag merging.** `OSStore` merges frontmatter `tags` with body `#hashtag` tokens into `Meta.Tags`. npub's current behavior only reads frontmatter tags. This is a behavior change for any note that uses body hashtags. Mitigation: note in PR description; verify on a real build whether existing notes depend on this being absent. If it is a problem, add an explicit filter in `buildNotePages` that keeps only frontmatter-source tags — but this requires a notes-cli API to distinguish them, which does not currently exist, so accept the behavior change for now and reconsider if it causes real-world issues.
 
 ## Out of scope — revisit later
 
 - Further decomposition of `Build` (separate rendering and writing units).
-- A notes-pub-local interface wrapping `note.Store` for finer-grained testability.
+- A npub-local interface wrapping `note.Store` for finer-grained testability.
 - Parallel rendering (OSStore is already parallel on reads; rendering remains sequential).
 - Moving image processing into notes-cli (rejected: publishing concern, not storage concern).

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/dreikanter/notes-cli/note"
-	"github.com/dreikanter/notes-pub/internal/config"
+	"github.com/dreikanter/npub/internal/config"
 )
 
 func TestCleanBuildDir(t *testing.T) {
@@ -45,7 +45,7 @@ func TestCleanBuildDir(t *testing.T) {
 }
 
 func TestCleanBuildDirNonExistent(t *testing.T) {
-	if err := cleanBuildDir("/tmp/notespub-does-not-exist-" + t.Name()); err != nil {
+	if err := cleanBuildDir("/tmp/npub-does-not-exist-" + t.Name()); err != nil {
 		t.Fatalf("cleanBuildDir() should not error for non-existent dir, got: %v", err)
 	}
 }

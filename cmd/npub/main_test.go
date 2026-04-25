@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/dreikanter/notes-pub/internal/config"
+	"github.com/dreikanter/npub/internal/config"
 )
 
 func TestResolveConfigPath(t *testing.T) {
@@ -31,9 +31,9 @@ func TestResolveConfigPath(t *testing.T) {
 			want:      "/explicit/config.yml",
 		},
 		{
-			name:      "flag takes precedence over NOTESPUB_CONFIG",
+			name:      "flag takes precedence over NPUB_CONFIG",
 			flagValue: "/explicit/config.yml",
-			envValue:  "/some/dir/notespub.yml",
+			envValue:  "/some/dir/npub.yml",
 			want:      "/explicit/config.yml",
 		},
 		{
@@ -43,26 +43,26 @@ func TestResolveConfigPath(t *testing.T) {
 			want:      "/explicit/config.yml",
 		},
 		{
-			name:      "NOTESPUB_CONFIG takes precedence over NOTES_PATH config",
-			envValue:  "/some/dir/notespub.yml",
+			name:      "NPUB_CONFIG takes precedence over NOTES_PATH config",
+			envValue:  "/some/dir/npub.yml",
 			notesPath: notesDir,
-			want:      "/some/dir/notespub.yml",
+			want:      "/some/dir/npub.yml",
 		},
 		{
-			name:     "NOTESPUB_CONFIG basic",
-			envValue: "/some/dir/notespub.yml",
-			want:     "/some/dir/notespub.yml",
+			name:     "NPUB_CONFIG basic",
+			envValue: "/some/dir/npub.yml",
+			want:     "/some/dir/npub.yml",
 		},
 		{
-			name:     "NOTESPUB_CONFIG with tilde",
-			envValue: "~/notes/notespub.yml",
-			want:     filepath.Join(home, "notes", "notespub.yml"),
+			name:     "NPUB_CONFIG with tilde",
+			envValue: "~/notes/npub.yml",
+			want:     filepath.Join(home, "notes", "npub.yml"),
 		},
 		{
-			name:     "NOTESPUB_CONFIG with env var",
-			envValue: "$TEST_NOTESPUB_HOME/notespub.yml",
-			env:      map[string]string{"TEST_NOTESPUB_HOME": "/expanded"},
-			want:     "/expanded/notespub.yml",
+			name:     "NPUB_CONFIG with env var",
+			envValue: "$TEST_NPUB_HOME/npub.yml",
+			env:      map[string]string{"TEST_NPUB_HOME": "/expanded"},
+			want:     "/expanded/npub.yml",
 		},
 		{
 			name:      "NOTES_PATH config when present",

@@ -10,9 +10,9 @@ import (
 )
 
 // DefaultConfigFile is the conventional config file name.
-const DefaultConfigFile = "notespub.yml"
+const DefaultConfigFile = "npub.yml"
 
-// Config holds all configuration for a notespub build.
+// Config holds all configuration for a npub build.
 type Config struct {
 	NotesPath   string `yaml:"notes_path"`
 	AssetsPath  string `yaml:"assets_path"`

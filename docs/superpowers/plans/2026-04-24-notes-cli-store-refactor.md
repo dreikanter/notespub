@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace notes-pub's direct use of `notes-cli` v0.1.66 free functions (`note.Scan`, `note.ParseFrontmatterFields`, `note.StripFrontmatter`) with the v0.3.20 `note.Store` interface. `Build` takes a `note.Store` explicitly; build tests migrate to `note.MemStore`.
+**Goal:** Replace npub's direct use of `notes-cli` v0.1.66 free functions (`note.Scan`, `note.ParseFrontmatterFields`, `note.StripFrontmatter`) with the v0.3.20 `note.Store` interface. `Build` takes a `note.Store` explicitly; build tests migrate to `note.MemStore`.
 
-**Architecture:** `cmd/notespub/main.go` constructs a `note.OSStore` rooted at `cfg.NotesPath` and passes it into `build.Build`. Inside `Build`, one `store.All(note.WithPublic(true))` call replaces the scan+read+parse+filter loop. A new `buildNotePages` helper converts `[]note.Entry` → `[]page.NotePage` + `map[int]string` note index. `render.Render` is retyped to take `string` body and `map[int]string` index.
+**Architecture:** `cmd/npub/main.go` constructs a `note.OSStore` rooted at `cfg.NotesPath` and passes it into `build.Build`. Inside `Build`, one `store.All(note.WithPublic(true))` call replaces the scan+read+parse+filter loop. A new `buildNotePages` helper converts `[]note.Entry` → `[]page.NotePage` + `map[int]string` note index. `render.Render` is retyped to take `string` body and `map[int]string` index.
 
 **Tech Stack:** Go 1.25+, `github.com/dreikanter/notes-cli` v0.3.20, `github.com/yuin/goldmark`, `github.com/spf13/cobra`.
 
@@ -25,7 +25,7 @@ Files modified:
 - `internal/render/render_test.go` — update map literal from `"8823"` key to `8823` key.
 - `internal/build/build.go` — swap read path to `store.All(note.WithPublic(true))`; extract `buildNotePages`, `chooseSlug`, `titleOrUID`; delete `parseDate`, `trimQuotes`, `trimQuotesList`, `cleanTitle`, `parsedNote`; change `Build` signature to take `note.Store`.
 - `internal/build/build_test.go` — migrate three Build tests to `note.MemStore`; drop `writeTestNote` and filesystem fixtures; `testConfig` loses the `notesPath` argument.
-- `cmd/notespub/main.go` — construct `note.NewOSStore(cfg.NotesPath)` and pass it to `build.Build`.
+- `cmd/npub/main.go` — construct `note.NewOSStore(cfg.NotesPath)` and pass it to `build.Build`.
 
 ## Pre-flight
 
@@ -265,7 +265,7 @@ git commit -m "render: accept string source and int-keyed note index"
 - Modify: `internal/build/build.go:16` (import)
 - Modify: `internal/build/build.go:165-254` (Build function — signature, read path, page construction, render loop)
 - Modify: `internal/build/build.go:462-505` (delete obsolete helpers)
-- Modify: `cmd/notespub/main.go:43` (Build call site)
+- Modify: `cmd/npub/main.go:43` (Build call site)
 
 This is the central task. It changes `Build`'s signature, replaces the scan+ReadFile loop, extracts the `buildNotePages` helper, and updates the render loop to use `int` IDs. The test file is migrated in Task 4.
 
@@ -289,10 +289,10 @@ import (
 	texttemplate "text/template"
 
 	"github.com/dreikanter/notes-cli/note"
-	"github.com/dreikanter/notes-pub/internal/config"
-	"github.com/dreikanter/notes-pub/internal/images"
-	"github.com/dreikanter/notes-pub/internal/page"
-	"github.com/dreikanter/notes-pub/internal/render"
+	"github.com/dreikanter/npub/internal/config"
+	"github.com/dreikanter/npub/internal/images"
+	"github.com/dreikanter/npub/internal/page"
+	"github.com/dreikanter/npub/internal/render"
 )
 ```
 
@@ -554,19 +554,19 @@ Delete these helper functions from `internal/build/build.go` (they are no longer
 
 After deletion, `time` is still imported (used by `PublishedAt` in `noteViewData`).
 
-- [ ] **Step 3.4: Update the call site in cmd/notespub/main.go**
+- [ ] **Step 3.4: Update the call site in cmd/npub/main.go**
 
-Replace `cmd/notespub/main.go:43` (inside `buildCmd.RunE`) with:
+Replace `cmd/npub/main.go:43` (inside `buildCmd.RunE`) with:
 
 ```go
 			log.Printf("building site from %s to %s", cfg.NotesPath, cfg.BuildPath)
 			store := note.NewOSStore(cfg.NotesPath)
-			if err := build.Build(store, cfg, notespub.TemplateFS, notespub.StyleCSS); err != nil {
+			if err := build.Build(store, cfg, npub.TemplateFS, npub.StyleCSS); err != nil {
 				return fmt.Errorf("build failed: %w", err)
 			}
 ```
 
-Add `"github.com/dreikanter/notes-cli/note"` to the import block at `cmd/notespub/main.go:3-16`:
+Add `"github.com/dreikanter/notes-cli/note"` to the import block at `cmd/npub/main.go:3-16`:
 
 ```go
 import (
@@ -579,9 +579,9 @@ import (
 	"strings"
 
 	"github.com/dreikanter/notes-cli/note"
-	notespub "github.com/dreikanter/notes-pub"
-	"github.com/dreikanter/notes-pub/internal/build"
-	"github.com/dreikanter/notes-pub/internal/config"
+	npub "github.com/dreikanter/npub"
+	"github.com/dreikanter/npub/internal/build"
+	"github.com/dreikanter/npub/internal/config"
 	"github.com/spf13/cobra"
 )
 ```
@@ -607,7 +607,7 @@ Expected: all pass. Build tests are not run here because they are in the middle 
 - [ ] **Step 3.7: Commit**
 
 ```bash
-git add internal/build/build.go cmd/notespub/main.go
+git add internal/build/build.go cmd/npub/main.go
 git commit -m "build: read notes via note.Store; extract buildNotePages helper"
 ```
 
@@ -635,7 +635,7 @@ import (
 	"time"
 
 	"github.com/dreikanter/notes-cli/note"
-	"github.com/dreikanter/notes-pub/internal/config"
+	"github.com/dreikanter/npub/internal/config"
 )
 ```
 
@@ -911,7 +911,7 @@ Expected: no output. Any findings must be fixed before continuing.
 - [ ] **Step 5.3: Confirm obsolete helpers are fully gone**
 
 ```bash
-grep -n -E "parseDate|trimQuotes|trimQuotesList|cleanTitle|parsedNote|note\.Scan|note\.ParseFrontmatterFields|note\.StripFrontmatter" internal/build/build.go internal/build/build_test.go cmd/notespub/main.go
+grep -n -E "parseDate|trimQuotes|trimQuotesList|cleanTitle|parsedNote|note\.Scan|note\.ParseFrontmatterFields|note\.StripFrontmatter" internal/build/build.go internal/build/build_test.go cmd/npub/main.go
 ```
 
 Expected: no matches. Any match means a leftover reference — remove it before finishing.
@@ -919,7 +919,7 @@ Expected: no matches. Any match means a leftover reference — remove it before 
 - [ ] **Step 5.4: Confirm the Store-path replacements are in place**
 
 ```bash
-grep -n -E "store\.All|note\.NewOSStore|note\.NewMemStore|note\.WithPublic|note\.Entry|note\.Store" internal/build/build.go internal/build/build_test.go cmd/notespub/main.go
+grep -n -E "store\.All|note\.NewOSStore|note\.NewMemStore|note\.WithPublic|note\.Entry|note\.Store" internal/build/build.go internal/build/build_test.go cmd/npub/main.go
 ```
 
 Expected at least:
@@ -933,10 +933,10 @@ Expected at least:
 If the operator has a populated notes directory locally, run:
 
 ```bash
-go run ./cmd/notespub build --notes ~/notes --out /tmp/notespub-smoke --url https://example.com --site-name "Smoke" --author "Smoke"
+go run ./cmd/npub build --notes ~/notes --out /tmp/npub-smoke --url https://example.com --site-name "Smoke" --author "Smoke"
 ```
 
-Expected: `build complete` logged, `/tmp/notespub-smoke/` contains `index.html`, `feed.xml`, at least one `YYYYMMDD_ID/slug/index.html`, and `tags/…` directories.
+Expected: `build complete` logged, `/tmp/npub-smoke/` contains `index.html`, `feed.xml`, at least one `YYYYMMDD_ID/slug/index.html`, and `tags/…` directories.
 
 Compare the diff of a pre-swap build (from `main`) against the post-swap build of the same notes tree — there should be no meaningful content diff except possibly:
 

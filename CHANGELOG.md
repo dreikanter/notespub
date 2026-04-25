@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.0] - 2026-04-25
+
+### Changed
+
+- Rename project, module, and CLI from `notespub` / `notes-pub` to `npub`.
+
 ## [0.1.14] - 2026-04-24
 
 ### Changed
