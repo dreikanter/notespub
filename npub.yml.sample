@@ -1,0 +1,34 @@
+---
+# npub configuration sample.
+# Uncomment the settings you want to customize.
+
+# Path to your notes store. Defaults to the NOTES_PATH environment variable.
+# notes_path: ""
+
+# Directory for cached image assets. Defaults to <notes_path>/images.
+# assets_path: ""
+
+# Directory where the generated site is written.
+# build_path: "./dist"
+
+# Directory with static files copied to the build output root.
+# Defaults to <notes_path>/static.
+# static_path: ""
+
+# Public root URL of the published site. Required.
+# site_root_url: ""
+
+# Site title shown in pages and feeds. Required.
+# site_name: ""
+
+# Author name shown in pages and feeds. Required.
+# author_name: ""
+
+# License name shown in the footer.
+# license_name: "CC BY 4.0"
+
+# License URL linked from the footer.
+# license_url: "https://creativecommons.org/licenses/by/4.0/"
+
+# Optional short paragraph shown above the posts list on the index page.
+# intro: ""

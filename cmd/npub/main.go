@@ -30,6 +30,24 @@ var rootCmd = &cobra.Command{
 	Short: "Build a static site from a local notes store",
 }
 
+var initCmd = &cobra.Command{
+	Use:   "init [path]",
+	Short: "Create a sample npub configuration",
+	Args:  cobra.MaximumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		path := "."
+		if len(args) > 0 {
+			path = args[0]
+		}
+		cfgPath, err := initConfig(path)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "created %s\nedit it to set required fields before running npub build\n", cfgPath)
+		return nil
+	},
+}
+
 var buildCmd = &cobra.Command{
 	Use:   "build",
 	Short: "Build the static site",
@@ -64,6 +82,44 @@ var serveCmd = &cobra.Command{
 		log.Printf("serving %s on http://localhost%s", dir, addr)
 		return http.ListenAndServe(addr, http.FileServer(http.Dir(dir)))
 	},
+}
+
+func initConfig(path string) (string, error) {
+	path = expandHome(os.ExpandEnv(path))
+	if path == "" {
+		path = "."
+	}
+
+	info, err := os.Stat(path)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return "", fmt.Errorf("cannot inspect %s: %w", path, err)
+		}
+		if err := os.MkdirAll(path, 0o755); err != nil {
+			return "", fmt.Errorf("cannot create directory %s: %w", path, err)
+		}
+	} else if !info.IsDir() {
+		return "", fmt.Errorf("%s is not a directory", path)
+	}
+
+	cfgPath := filepath.Join(path, config.DefaultConfigFile)
+	file, err := os.OpenFile(cfgPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
+	if err != nil {
+		if os.IsExist(err) {
+			return "", fmt.Errorf("config file already exists: %s", cfgPath)
+		}
+		return "", fmt.Errorf("cannot create config file %s: %w", cfgPath, err)
+	}
+	if _, err := file.Write(npub.SampleConfig); err != nil {
+		_ = file.Close()
+		_ = os.Remove(cfgPath)
+		return "", fmt.Errorf("cannot write config file %s: %w", cfgPath, err)
+	}
+	if err := file.Close(); err != nil {
+		_ = os.Remove(cfgPath)
+		return "", fmt.Errorf("cannot write config file %s: %w", cfgPath, err)
+	}
+	return cfgPath, nil
 }
 
 func resolveConfigPath(flagValue, envValue, notesPath string) string {
@@ -135,6 +191,7 @@ func init() {
 	serveCmd.Flags().String("dir", "./dist", "directory to serve")
 	serveCmd.Flags().String("port", "4000", "port to listen on")
 
+	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(buildCmd)
 	rootCmd.AddCommand(serveCmd)
 }

@@ -60,7 +60,7 @@ Config file discovery order:
 3. `npub.yml` inside `$NOTES_PATH` (or `--notes` value) if it exists
 4. `npub.yml` in the current directory
 
-See `npub.sample.yml` in the repo for a starting template.
+Run `npub init [path]` to create a commented `npub.yml` sample in a directory. If `path` is omitted, the current directory is used.
 
 The optional `intro` field renders as a paragraph above the posts list on the index page. Leave it empty or unset to omit.
 
@@ -73,6 +73,14 @@ Downloaded images are cached in an assets directory, organized by note UID. By d
 Files in the `static` subdirectory of `notes_path` are copied as-is to the build output root. Use this for `CNAME`, `robots.txt`, `favicon.ico`, etc. Override with `static_path` in the config or `--static` flag.
 
 ## Usage
+
+Create a configuration file:
+
+```sh
+npub init
+# or create a new project directory
+npub init ./my-notes-site
+```
 
 Build the site:
 
