@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dreikanter/notes-cli/note"
+	"github.com/dreikanter/notesctl/note"
 	"github.com/dreikanter/npub/internal/config"
 )
 

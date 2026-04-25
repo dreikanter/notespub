@@ -9,7 +9,7 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/dreikanter/notes-cli/note"
+	"github.com/dreikanter/notesctl/note"
 	"github.com/dreikanter/npub"
 	"github.com/dreikanter/npub/internal/build"
 	"github.com/dreikanter/npub/internal/config"
