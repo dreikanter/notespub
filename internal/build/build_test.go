@@ -63,9 +63,8 @@ func TestCopyStaticFiles(t *testing.T) {
 
 func TestCleanBuildDirRejectsHome(t *testing.T) {
 	home, err := os.UserHomeDir()
-	if err != nil {
-		t.Skip("cannot determine home dir")
-	}
+	require.NoError(t, err)
+
 	require.Error(t, cleanBuildDir(home))
 }
 
