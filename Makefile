@@ -28,4 +28,4 @@ test:
 	go test ./...
 
 lint:
-	go tool golangci-lint run
+	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.11.4 run

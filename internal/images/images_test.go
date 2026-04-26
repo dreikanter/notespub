@@ -59,11 +59,11 @@ func TestCacheMissDownloads(t *testing.T) {
 func TestCleanshotRedirect(t *testing.T) {
 	directURL := ""
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/share/abc+":
+		switch r.URL.Path {
+		case "/share/abc+":
 			w.Header().Set("Location", directURL+"/direct/photo.jpg?response-content-disposition=attachment%3Bfilename%3Dscreenshot.png")
 			w.WriteHeader(http.StatusFound)
-		case r.URL.Path == "/direct/photo.jpg":
+		case "/direct/photo.jpg":
 			w.Header().Set("Content-Type", "image/png")
 			_, _ = w.Write([]byte("png data"))
 		}

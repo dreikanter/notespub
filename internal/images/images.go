@@ -52,7 +52,9 @@ func (c *Cache) Get(imageURL, pageUID string) (Entry, error) {
 	}
 
 	idx[imageURL] = entry
-	c.saveIndex(idx)
+	if err := c.saveIndex(idx); err != nil {
+		return Entry{}, err
+	}
 	return entry, nil
 }
 
@@ -87,7 +89,9 @@ func (c *Cache) downloadCleanShot(imageURL string) ([]byte, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		return nil, "", err
+	}
 
 	if resp.StatusCode < 300 || resp.StatusCode >= 400 {
 		return c.downloadDirect(imageURL)
@@ -114,7 +118,7 @@ func (c *Cache) downloadDirect(imageURL string) ([]byte, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		return nil, "", fmt.Errorf("HTTP %d", resp.StatusCode)
 	}
@@ -173,17 +177,19 @@ func (c *Cache) loadIndex() map[string]Entry {
 	return idx
 }
 
-func (c *Cache) saveIndex(idx map[string]Entry) {
+func (c *Cache) saveIndex(idx map[string]Entry) error {
 	data, err := json.MarshalIndent(idx, "", "  ")
 	if err != nil {
-		return
+		return err
 	}
-	os.WriteFile(c.indexPath(), data, 0o644)
+	return os.WriteFile(c.indexPath(), data, 0o644)
 }
 
 func randomName(ext string) string {
 	b := make([]byte, 16)
-	rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		panic(err)
+	}
 	return hex.EncodeToString(b) + ext
 }
 

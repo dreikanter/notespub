@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.2.1] - 2026-04-26
+
+### Added
+
+- Add `npub init [path]` to generate a sample `npub.yml` configuration.
+- Add GitHub Actions workflows for tests, linting, and vulnerability scanning.
+- Add the embedded nview favicon asset to generated sites.
+
+### Changed
+
+- Switch the notes dependency to `github.com/dreikanter/notesctl`.
+- Refactor tests to use `testify` assertions and shared helpers.
+- Update Go and Tailwind dependencies to the latest stable versions.
+- Update the auto-tag workflow to `actions/checkout@v6`.
+- Pin the local lint command to `golangci-lint` v2.11.4.
+
+### Fixed
+
+- Bump the Go patch version to `1.25.9` to resolve standard-library vulnerability findings.
+- Address lint findings reported by `golangci-lint`.
+
 ## [0.2.0] - 2026-04-25
 
 ### Changed
