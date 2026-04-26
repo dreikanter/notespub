@@ -1,27 +1,5 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    "./templates/**/*.html",
-    "./templates/**/*.xml",
-  ],
-  safelist: [
-    "bg-slate-100",
-    "bg-slate-500",
-    "block",
-    "border",
-    "border-slate-200",
-    "border-slate-600",
-    "font-normal",
-    "no-underline",
-    "rounded-md",
-    "text-slate-100",
-    "text-slate-400",
-    "text-slate-800",
-    "text-base",
-    "leading-normal",
-    "overflow-x-auto",
-    "rounded-sm",
-  ],
   theme: {
     extend: {
       typography: {
@@ -62,7 +40,4 @@ module.exports = {
       },
     },
   },
-  plugins: [
-    require('@tailwindcss/typography')
-  ],
 }

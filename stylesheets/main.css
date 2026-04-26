@@ -1,5 +1,8 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-@tailwind typography;
+@import "tailwindcss" source(none);
+@plugin "@tailwindcss/typography";
+@config "../tailwind.config.js";
+
+@source "../templates/**/*.html";
+@source "../templates/**/*.xml";
+@source inline("bg-slate-100 bg-slate-500 block border border-slate-200 border-slate-600 font-normal no-underline rounded-md text-slate-100 text-slate-400 text-slate-800 text-base leading-normal overflow-x-auto rounded-sm");
 
