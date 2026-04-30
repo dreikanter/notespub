@@ -49,13 +49,17 @@ var initCmd = &cobra.Command{
 }
 
 var buildCmd = &cobra.Command{
-	Use:   "build",
+	Use:   "build [dir]",
 	Short: "Build the static site",
+	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfgPath, _ := cmd.Flags().GetString("config")
 		cfg, err := loadConfig(cmd, cfgPath)
 		if err != nil {
 			return err
+		}
+		if len(args) > 0 {
+			cfg.BuildPath = expandHome(os.ExpandEnv(args[0]))
 		}
 		if err := validateNotesPath(cfg.NotesPath); err != nil {
 			return err
@@ -72,11 +76,15 @@ var buildCmd = &cobra.Command{
 }
 
 var serveCmd = &cobra.Command{
-	Use:   "serve",
+	Use:   "serve [dir]",
 	Short: "Serve the built site locally",
+	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		port, _ := cmd.Flags().GetString("port")
-		dir, _ := cmd.Flags().GetString("dir")
+		var dir string
+		if len(args) > 0 {
+			dir = args[0]
+		}
 		if dir == "" {
 			cfgPath, _ := cmd.Flags().GetString("config")
 			explicitConfig := cmd.Flags().Changed("config")
@@ -180,7 +188,7 @@ func loadConfig(cmd *cobra.Command, cfgPath string) (config.Config, error) {
 	}
 	cfgPath = resolveConfigPath(cfgPath, notesPath)
 
-	flagNames := []string{"path", "assets", "out", "static", "url", "site-name", "author", "license-name", "license-url"}
+	flagNames := []string{"path", "assets", "static", "url", "site-name", "author", "license-name", "license-url"}
 	flagOverrides := make(map[string]string)
 	for _, name := range flagNames {
 		if cmd.Flags().Changed(name) {
@@ -212,7 +220,6 @@ func init() {
 	buildCmd.Flags().String("config", "", "config file path (default: npub.yml)")
 	buildCmd.Flags().String("path", "", "notes path (default: NOTES_PATH)")
 	buildCmd.Flags().String("assets", "", "image assets path")
-	buildCmd.Flags().String("out", "", "output directory (default: ./dist)")
 	buildCmd.Flags().String("static", "", "static files directory")
 	buildCmd.Flags().String("url", "", "site root URL")
 	buildCmd.Flags().String("site-name", "", "site name")
@@ -221,7 +228,6 @@ func init() {
 	buildCmd.Flags().String("license-url", "", "license URL (default: https://creativecommons.org/licenses/by/4.0/)")
 
 	serveCmd.Flags().String("config", "", "config file path (default: npub.yml)")
-	serveCmd.Flags().String("dir", "", "directory to serve (default: build_path from config, or ./dist)")
 	serveCmd.Flags().String("port", "4000", "port to listen on")
 
 	rootCmd.AddCommand(initCmd)

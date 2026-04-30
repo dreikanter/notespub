@@ -40,9 +40,9 @@ All values can be overridden with CLI flags:
 
 | Config option | CLI flag | Default | Required |
 |---|---|---|---|
-| `notes_path` | `--notes` | `$NOTES_PATH` | |
+| `notes_path` | `--path` | `$NOTES_PATH` | |
 | `assets_path` | `--assets` | `<notes_path>/images` | |
-| `build_path` | `--out` | `./dist` | |
+| `build_path` | positional `[dir]` on `build`/`serve` | `./dist` | |
 | `static_path` | `--static` | `<notes_path>/static` | |
 | `site_root_url` | `--url` | | Yes |
 | `site_name` | `--site-name` | | Yes |
@@ -51,7 +51,7 @@ All values can be overridden with CLI flags:
 | `license_url` | `--license-url` | https://creativecommons.org/licenses/by/4.0/ | |
 | `intro` | | | |
 
-Priority: CLI flags > YAML config.
+Priority: positional/flag > YAML config.
 
 Config file discovery order:
 
@@ -84,16 +84,18 @@ npub init ./my-notes-site
 Build the site:
 
 ```sh
-npub build
+npub build           # writes to build_path from config (or ./dist)
+npub build ./public  # override the output directory
 ```
 
 Serve locally:
 
 ```sh
-npub serve
+npub serve           # serves build_path from config (or ./dist)
+npub serve ./public  # serve a different directory
 ```
 
-The `serve` command starts a local HTTP server on port 4000 (override with `--port`). It serves the `build_path` from your config (or `./dist` if no config is found). Override with `--dir`.
+The `serve` command starts a local HTTP server on port 4000 (override with `--port`).
 
 ## Notes format
 
