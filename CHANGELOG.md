@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.13] - 2026-04-30
+
+### Changed
+
+- Trim help text across the CLI for brevity. `npub --help` is a one-line `Long` that points at `npub config` for resolution details. `npub build --help` drops the prose paragraph and the three usage examples in favor of a one-sentence note that flags override YAML. `npub config --help` keeps the resolution details (now the only place they appear) but compacts the discovery list and folds the `NOTES_PATH` double-duty paragraph into a single sentence. `npub serve --help` drops its three examples; the `--dir` fallback note is preserved. ([#74])
+
+[#74]: https://github.com/dreikanter/npub/pull/74
+
 ## [0.2.12] - 2026-04-30
 
 ### Added
