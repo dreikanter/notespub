@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -101,8 +102,12 @@ var serveCmd = &cobra.Command{
 			return fmt.Errorf("cannot serve %q: not a directory", dir)
 		}
 		addr := host + ":" + port
-		log.Printf("serving %s on http://%s", dir, addr)
-		return http.ListenAndServe(addr, http.FileServer(http.Dir(dir)))
+		ln, err := net.Listen("tcp", addr)
+		if err != nil {
+			return err
+		}
+		log.Printf("serving %s on http://%s", dir, ln.Addr().String())
+		return http.Serve(ln, http.FileServer(http.Dir(dir)))
 	},
 }
 
