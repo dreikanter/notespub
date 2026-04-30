@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.11] - 2026-04-30
+
+### Changed
+
+- `npub --help`, `npub build --help`, and `npub serve --help` now expose `Long` descriptions covering the flag-over-YAML precedence rule, config discovery order, and the two roles of `NOTES_PATH` (default for `notes_path` and hint location for `npub.yml`). `build` and `serve` also include usage examples. README's "Config file discovery order" section now calls out the discovery role of `NOTES_PATH`. ([#71])
+
+[#71]: https://github.com/dreikanter/npub/pull/71
+
 ## [0.2.10] - 2026-04-30
 
 ### Fixed
