@@ -208,7 +208,8 @@ func init() {
 	}
 	rootCmd.Version = Version
 
-	buildCmd.Flags().String("config", "", "config file path (default: npub.yml)")
+	rootCmd.PersistentFlags().String("config", "", "config file path (default: npub.yml)")
+
 	buildCmd.Flags().String("path", "", "notes path (default: NOTES_PATH)")
 	buildCmd.Flags().String("assets", "", "image assets path")
 	buildCmd.Flags().String("out", "", "output directory (default: ./dist)")
@@ -219,7 +220,6 @@ func init() {
 	buildCmd.Flags().String("license-name", "", "license name (default: CC BY 4.0)")
 	buildCmd.Flags().String("license-url", "", "license URL (default: https://creativecommons.org/licenses/by/4.0/)")
 
-	serveCmd.Flags().String("config", "", "config file path (default: npub.yml)")
 	serveCmd.Flags().String("dir", "", "directory to serve (default: build_path from config, or ./dist)")
 	serveCmd.Flags().String("host", "localhost", "interface to bind")
 	serveCmd.Flags().String("port", "4000", "port to listen on")

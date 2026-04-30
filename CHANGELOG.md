@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.8] - 2026-04-30
+
+### Changed
+
+- Move `--config` from `build` and `serve` to a `rootCmd` persistent flag. The two identical declarations are now a single one, so future subcommands inherit it for free and `--config` shows up under `npub --help`. `cmd.Flags().GetString("config")` already resolves persistent flags, so `RunE` handlers are unchanged. ([#68])
+
+[#68]: https://github.com/dreikanter/npub/pull/68
+
 ## [0.2.7] - 2026-04-30
 
 ### Fixed
