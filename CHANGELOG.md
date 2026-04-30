@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.6] - 2026-04-30
+
+### Fixed
+
+- Drop dead `cfg.BuildPath != ""` guard in `serveCmd`'s config-resolution switch. `config.Load` always defaults `cfg.BuildPath` to `./dist` when the YAML omits it, so the guard never failed. ([#66])
+
+[#66]: https://github.com/dreikanter/npub/pull/66
+
 ## [0.2.5] - 2026-04-30
 
 ### Added
