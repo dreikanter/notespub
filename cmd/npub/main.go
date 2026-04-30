@@ -26,8 +26,21 @@ func main() {
 }
 
 var rootCmd = &cobra.Command{
-	Use:          "npub",
-	Short:        "Build a static site from a local notes store",
+	Use:   "npub",
+	Short: "Build a static site from a local notes store",
+	Long: `npub builds a static site from a directory of Markdown notes.
+
+Configuration is layered: command-line flags (and positional arguments) override
+values from the YAML config file.
+
+Config file discovery order:
+  1. --config flag (if set)
+  2. npub.yml inside $NOTES_PATH (or the --path value, for build)
+  3. npub.yml in the current directory
+
+NOTES_PATH does double duty:
+  1. Source for notes_path when neither --path nor the YAML sets it.
+  2. Hint location for finding npub.yml during config discovery.`,
 	SilenceUsage: true,
 }
 
@@ -52,6 +65,20 @@ var initCmd = &cobra.Command{
 var buildCmd = &cobra.Command{
 	Use:   "build",
 	Short: "Build the static site",
+	Long: `Build the static site from notes.
+
+Reads notes from notes_path, renders them to HTML, and writes the result to
+build_path.
+
+Examples:
+  # Use npub.yml from $NOTES_PATH or the current directory
+  npub build
+
+  # Override the config file
+  npub --config ./prod.yml build
+
+  # Override individual settings via flags
+  npub build --path ~/notes --out ./public --url https://example.com`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfgPath, _ := cmd.Flags().GetString("config")
 		cfg, err := loadConfig(cmd, cfgPath)
@@ -75,6 +102,21 @@ var buildCmd = &cobra.Command{
 var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Serve the built site locally",
+	Long: `Serve the built site over HTTP from a local directory.
+
+Without --dir, serve resolves the directory from build_path in the config
+(falling back to ./dist when no config is found). With --dir, the config is
+not consulted.
+
+Examples:
+  # Serve build_path from the discovered config (or ./dist)
+  npub serve
+
+  # Serve a specific directory
+  npub serve --dir ./public
+
+  # Bind to all interfaces on a custom port
+  npub serve --host 0.0.0.0 --port 8080`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		host, _ := cmd.Flags().GetString("host")
 		port, _ := cmd.Flags().GetInt("port")

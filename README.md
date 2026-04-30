@@ -59,6 +59,10 @@ Config file discovery order:
 2. `npub.yml` inside `$NOTES_PATH` (or `--path` value) if it exists
 3. `npub.yml` in the current directory
 
+`NOTES_PATH` plays two roles: it is the default source for `notes_path` when
+neither `--path` nor the YAML sets it, and it acts as a hint location for
+config discovery (step 2).
+
 Run `npub init [dir]` to create a commented `npub.yml` sample in a directory. If `dir` is omitted, the current directory is used.
 
 The optional `intro` field renders as a paragraph above the posts list on the index page. Leave it empty or unset to omit.
