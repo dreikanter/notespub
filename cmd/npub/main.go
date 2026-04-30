@@ -76,16 +76,32 @@ var serveCmd = &cobra.Command{
 	Short: "Serve the built site locally",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		port, _ := cmd.Flags().GetString("port")
-		path, _ := cmd.Flags().GetString("path")
-		if path == "" {
-			path = os.Getenv("NOTES_PATH")
+		dir, _ := cmd.Flags().GetString("dir")
+		if dir == "" {
+			cfgPath, _ := cmd.Flags().GetString("config")
+			explicitConfig := cmd.Flags().Changed("config")
+			cfgPath = resolveConfigPath(cfgPath, os.Getenv("NOTES_PATH"))
+			cfg, err := config.Load(cfgPath, nil)
+			switch {
+			case err != nil && explicitConfig:
+				return err
+			case err == nil && cfg.BuildPath != "":
+				dir = cfg.BuildPath
+			default:
+				dir = "./dist"
+			}
 		}
-		if err := validateNotesPath(path); err != nil {
-			return err
+		dir = expandHome(os.ExpandEnv(dir))
+		info, err := os.Stat(dir)
+		if err != nil {
+			return fmt.Errorf("cannot serve %q: %w (run npub build first)", dir, err)
+		}
+		if !info.IsDir() {
+			return fmt.Errorf("cannot serve %q: not a directory", dir)
 		}
 		addr := ":" + port
-		log.Printf("serving %s on http://localhost%s", path, addr)
-		return http.ListenAndServe(addr, http.FileServer(http.Dir(path)))
+		log.Printf("serving %s on http://localhost%s", dir, addr)
+		return http.ListenAndServe(addr, http.FileServer(http.Dir(dir)))
 	},
 }
 
@@ -141,12 +157,9 @@ func initConfig(path string) (string, error) {
 	return cfgPath, nil
 }
 
-func resolveConfigPath(flagValue, envValue, notesPath string) string {
+func resolveConfigPath(flagValue, notesPath string) string {
 	if flagValue != "" {
 		return expandHome(os.ExpandEnv(flagValue))
-	}
-	if envValue != "" {
-		return expandHome(os.ExpandEnv(envValue))
 	}
 	if notesPath != "" {
 		// Match config.Load's path handling for notes_path: expand ~/ but not $VARS.
@@ -165,7 +178,7 @@ func loadConfig(cmd *cobra.Command, cfgPath string) (config.Config, error) {
 	if notesPath == "" {
 		notesPath = os.Getenv("NOTES_PATH")
 	}
-	cfgPath = resolveConfigPath(cfgPath, os.Getenv("NPUB_CONFIG"), notesPath)
+	cfgPath = resolveConfigPath(cfgPath, notesPath)
 
 	flagNames := []string{"path", "assets", "out", "static", "url", "site-name", "author", "license-name", "license-url"}
 	flagOverrides := make(map[string]string)
@@ -207,7 +220,8 @@ func init() {
 	buildCmd.Flags().String("license-name", "", "license name (default: CC BY 4.0)")
 	buildCmd.Flags().String("license-url", "", "license URL (default: https://creativecommons.org/licenses/by/4.0/)")
 
-	serveCmd.Flags().String("path", "", "notes path (default: NOTES_PATH)")
+	serveCmd.Flags().String("config", "", "config file path (default: npub.yml)")
+	serveCmd.Flags().String("dir", "", "directory to serve (default: build_path from config, or ./dist)")
 	serveCmd.Flags().String("port", "4000", "port to listen on")
 
 	rootCmd.AddCommand(initCmd)

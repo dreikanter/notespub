@@ -67,9 +67,6 @@ func TestInitConfigRejectsNonDirectoryPath(t *testing.T) {
 }
 
 func TestResolveConfigPath(t *testing.T) {
-	home, err := os.UserHomeDir()
-	require.NoError(t, err)
-
 	notesDir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(notesDir, config.DefaultConfigFile), []byte("---\n"), 0o644))
 	emptyNotesDir := t.TempDir()
@@ -77,9 +74,7 @@ func TestResolveConfigPath(t *testing.T) {
 	tests := []struct {
 		name      string
 		flagValue string
-		envValue  string
 		notesPath string
-		env       map[string]string
 		want      string
 	}{
 		{
@@ -88,38 +83,10 @@ func TestResolveConfigPath(t *testing.T) {
 			want:      "/explicit/config.yml",
 		},
 		{
-			name:      "flag takes precedence over NPUB_CONFIG",
-			flagValue: "/explicit/config.yml",
-			envValue:  "/some/dir/npub.yml",
-			want:      "/explicit/config.yml",
-		},
-		{
 			name:      "flag takes precedence over NOTES_PATH config",
 			flagValue: "/explicit/config.yml",
 			notesPath: notesDir,
 			want:      "/explicit/config.yml",
-		},
-		{
-			name:      "NPUB_CONFIG takes precedence over NOTES_PATH config",
-			envValue:  "/some/dir/npub.yml",
-			notesPath: notesDir,
-			want:      "/some/dir/npub.yml",
-		},
-		{
-			name:     "NPUB_CONFIG basic",
-			envValue: "/some/dir/npub.yml",
-			want:     "/some/dir/npub.yml",
-		},
-		{
-			name:     "NPUB_CONFIG with tilde",
-			envValue: "~/notes/npub.yml",
-			want:     filepath.Join(home, "notes", "npub.yml"),
-		},
-		{
-			name:     "NPUB_CONFIG with env var",
-			envValue: "$TEST_NPUB_HOME/npub.yml",
-			env:      map[string]string{"TEST_NPUB_HOME": "/expanded"},
-			want:     "/expanded/npub.yml",
 		},
 		{
 			name:      "NOTES_PATH config when present",
@@ -139,11 +106,7 @@ func TestResolveConfigPath(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			for k, v := range tt.env {
-				t.Setenv(k, v)
-			}
-
-			assert.Equal(t, tt.want, resolveConfigPath(tt.flagValue, tt.envValue, tt.notesPath))
+			assert.Equal(t, tt.want, resolveConfigPath(tt.flagValue, tt.notesPath))
 		})
 	}
 }

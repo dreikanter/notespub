@@ -56,9 +56,8 @@ Priority: CLI flags > YAML config.
 Config file discovery order:
 
 1. `--config` flag
-2. `NPUB_CONFIG` env var
-3. `npub.yml` inside `$NOTES_PATH` (or `--notes` value) if it exists
-4. `npub.yml` in the current directory
+2. `npub.yml` inside `$NOTES_PATH` (or `--path` value) if it exists
+3. `npub.yml` in the current directory
 
 Run `npub init [path]` to create a commented `npub.yml` sample in a directory. If `path` is omitted, the current directory is used.
 
@@ -94,7 +93,7 @@ Serve locally:
 npub serve
 ```
 
-The `serve` command starts a local HTTP server on port 4000 (override with `--port`). Pass `--path` to choose the directory to serve, or set `NOTES_PATH`; if neither is set the command fails with an explicit error.
+The `serve` command starts a local HTTP server on port 4000 (override with `--port`). It serves the `build_path` from your config (or `./dist` if no config is found). Override with `--dir`.
 
 ## Notes format
 
