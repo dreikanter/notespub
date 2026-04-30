@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/debug"
-	"strings"
 
 	"github.com/dreikanter/notesctl/note"
 	"github.com/dreikanter/npub"
@@ -94,7 +93,7 @@ var serveCmd = &cobra.Command{
 				dir = "./dist"
 			}
 		}
-		dir = expandHome(os.ExpandEnv(dir))
+		dir = config.ExpandPath(dir)
 		info, err := os.Stat(dir)
 		if err != nil {
 			if explicitDir {
@@ -130,7 +129,7 @@ func validateNotesPath(path string) error {
 }
 
 func initConfig(path string) (string, error) {
-	path = expandHome(os.ExpandEnv(path))
+	path = config.ExpandPath(path)
 	if path == "" {
 		path = "."
 	}
@@ -169,11 +168,10 @@ func initConfig(path string) (string, error) {
 
 func resolveConfigPath(flagValue, notesPath string) string {
 	if flagValue != "" {
-		return expandHome(os.ExpandEnv(flagValue))
+		return config.ExpandPath(flagValue)
 	}
 	if notesPath != "" {
-		// Match config.Load's path handling for notes_path: expand ~/ but not $VARS.
-		candidate := filepath.Join(expandHome(notesPath), config.DefaultConfigFile)
+		candidate := filepath.Join(config.ExpandPath(notesPath), config.DefaultConfigFile)
 		if _, err := os.Stat(candidate); err == nil {
 			return candidate
 		}
@@ -200,15 +198,6 @@ func loadConfig(cmd *cobra.Command, cfgPath string) (config.Config, error) {
 	}
 
 	return config.Load(cfgPath, flagOverrides)
-}
-
-func expandHome(path string) string {
-	if strings.HasPrefix(path, "~/") {
-		if home, err := os.UserHomeDir(); err == nil {
-			return filepath.Join(home, path[2:])
-		}
-	}
-	return path
 }
 
 func init() {

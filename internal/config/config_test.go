@@ -124,3 +124,88 @@ author_name: "Test Author"
 	require.NoError(t, err)
 	assert.Equal(t, filepath.Join(home, "notes"), cfg.NotesPath)
 }
+
+func TestExpandEnvVarsInYAMLPaths(t *testing.T) {
+	yamlPath := writeConfig(t, `
+notes_path: "$NPUB_TEST_ROOT/notes"
+assets_path: "$NPUB_TEST_ROOT/assets"
+build_path: "$NPUB_TEST_ROOT/dist"
+static_path: "$NPUB_TEST_ROOT/static"
+site_root_url: "https://example.com"
+site_name: "Test Site"
+author_name: "Test Author"
+`)
+	t.Setenv("NPUB_TEST_ROOT", "/srv/npub")
+
+	cfg, err := Load(yamlPath, nil)
+	require.NoError(t, err)
+
+	assert.Equal(t, "/srv/npub/notes", cfg.NotesPath)
+	assert.Equal(t, "/srv/npub/assets", cfg.AssetsPath)
+	assert.Equal(t, "/srv/npub/dist", cfg.BuildPath)
+	assert.Equal(t, "/srv/npub/static", cfg.StaticPath)
+}
+
+func TestExpandPath(t *testing.T) {
+	home, err := os.UserHomeDir()
+	require.NoError(t, err)
+	t.Setenv("NPUB_TEST_VAR", "/srv/npub")
+
+	tests := []struct {
+		name string
+		path string
+		want string
+	}{
+		{
+			name: "tilde prefix",
+			path: "~/documents",
+			want: filepath.Join(home, "documents"),
+		},
+		{
+			name: "tilde only slash",
+			path: "~/",
+			want: home,
+		},
+		{
+			name: "no tilde",
+			path: "/absolute/path",
+			want: "/absolute/path",
+		},
+		{
+			name: "tilde in middle is not expanded",
+			path: "/some/~/path",
+			want: "/some/~/path",
+		},
+		{
+			name: "relative path unchanged",
+			path: "relative/path",
+			want: "relative/path",
+		},
+		{
+			name: "env var expansion",
+			path: "$NPUB_TEST_VAR/notes",
+			want: "/srv/npub/notes",
+		},
+		{
+			name: "env var braced expansion",
+			path: "${NPUB_TEST_VAR}/notes",
+			want: "/srv/npub/notes",
+		},
+		{
+			name: "unset env var collapses to empty",
+			path: "$NPUB_UNSET_VAR/notes",
+			want: "/notes",
+		},
+		{
+			name: "empty input",
+			path: "",
+			want: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, ExpandPath(tt.path))
+		})
+	}
+}

@@ -104,13 +104,13 @@ func Load(yamlPath string, flagOverrides map[string]string) (Config, error) {
 	if cfg.NotesPath == "" {
 		cfg.NotesPath = os.Getenv("NOTES_PATH")
 	}
-	cfg.NotesPath = expandHome(cfg.NotesPath)
-	cfg.AssetsPath = expandHome(cfg.AssetsPath)
+	cfg.NotesPath = ExpandPath(cfg.NotesPath)
+	cfg.AssetsPath = ExpandPath(cfg.AssetsPath)
 	if cfg.BuildPath == "" {
 		cfg.BuildPath = "./dist"
 	}
-	cfg.BuildPath = expandHome(cfg.BuildPath)
-	cfg.StaticPath = expandHome(cfg.StaticPath)
+	cfg.BuildPath = ExpandPath(cfg.BuildPath)
+	cfg.StaticPath = ExpandPath(cfg.StaticPath)
 	if cfg.StaticPath == "" && cfg.NotesPath != "" {
 		cfg.StaticPath = filepath.Join(cfg.NotesPath, "static")
 	}
@@ -142,7 +142,11 @@ func Load(yamlPath string, flagOverrides map[string]string) (Config, error) {
 	return cfg, nil
 }
 
-func expandHome(path string) string {
+// ExpandPath expands environment variables ($VAR, ${VAR}) and a leading ~/
+// in path strings. Apply it at every boundary that accepts a filesystem path
+// (CLI flags, positionals, YAML fields) so users see one consistent rule.
+func ExpandPath(path string) string {
+	path = os.ExpandEnv(path)
 	if !strings.HasPrefix(path, "~/") {
 		return path
 	}
