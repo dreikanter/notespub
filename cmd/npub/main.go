@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 	"github.com/dreikanter/npub/internal/build"
 	"github.com/dreikanter/npub/internal/config"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 var Version = "dev"
@@ -81,7 +83,7 @@ Examples:
   npub build --path ~/notes --out ./public --url https://example.com`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfgPath, _ := cmd.Flags().GetString("config")
-		cfg, err := loadConfig(cmd, cfgPath)
+		cfg, _, err := loadConfig(cmd, cfgPath)
 		if err != nil {
 			return err
 		}
@@ -97,6 +99,48 @@ Examples:
 		log.Println("build complete")
 		return nil
 	},
+}
+
+var configCmd = &cobra.Command{
+	Use:   "config",
+	Short: "Print resolved configuration",
+	Long: `Print the absolute path of the resolved config file along with the final value
+of every configuration option after merging YAML, CLI flags, environment
+variables, and built-in defaults.
+
+Accepts the same overrides as build, so you can preview how a build would see
+its configuration without running it. When required fields are missing, the
+partial configuration is still printed and the command exits with an error.
+
+Examples:
+  # Show the resolved configuration
+  npub config
+
+  # Preview the effect of overrides
+  npub config --path ~/notes --url https://example.com`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cfgFlag, _ := cmd.Flags().GetString("config")
+		cfg, cfgPath, loadErr := loadConfig(cmd, cfgFlag)
+		if abs, err := filepath.Abs(cfgPath); err == nil {
+			cfgPath = abs
+		}
+		if err := printConfig(cmd.OutOrStdout(), cfgPath, cfg); err != nil {
+			return err
+		}
+		return loadErr
+	},
+}
+
+func printConfig(w io.Writer, cfgPath string, cfg config.Config) error {
+	if _, err := fmt.Fprintf(w, "config: %s\n\n", cfgPath); err != nil {
+		return err
+	}
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return fmt.Errorf("cannot marshal config: %w", err)
+	}
+	_, err = w.Write(data)
+	return err
 }
 
 var serveCmd = &cobra.Command{
@@ -226,7 +270,7 @@ func resolveConfigPath(flagValue, notesPath string) string {
 	return config.DefaultConfigFile
 }
 
-func loadConfig(cmd *cobra.Command, cfgPath string) (config.Config, error) {
+func loadConfig(cmd *cobra.Command, cfgPath string) (config.Config, string, error) {
 	// Resolve notes path here too (not only in config.Load) because config
 	// discovery needs it before the yaml is read.
 	var notesPath string
@@ -246,14 +290,15 @@ func loadConfig(cmd *cobra.Command, cfgPath string) (config.Config, error) {
 		}
 	}
 
-	return config.Load(cfgPath, flagOverrides)
+	cfg, err := config.Load(cfgPath, flagOverrides)
+	return cfg, cfgPath, err
 }
 
 // loadConfigOpt loads config like loadConfig but treats a missing/invalid
 // config as non-fatal when --config wasn't set explicitly, returning a
 // minimal default instead.
 func loadConfigOpt(cmd *cobra.Command, cfgPath string) (config.Config, error) {
-	cfg, err := loadConfig(cmd, cfgPath)
+	cfg, _, err := loadConfig(cmd, cfgPath)
 	if err != nil && !cmd.Flags().Changed("config") {
 		return config.Config{BuildPath: "./dist"}, nil
 	}
@@ -270,15 +315,8 @@ func init() {
 
 	rootCmd.PersistentFlags().String("config", "", "config file path (default: npub.yml)")
 
-	buildCmd.Flags().String("path", "", "notes path (default: NOTES_PATH)")
-	buildCmd.Flags().String("assets", "", "image assets path")
-	buildCmd.Flags().String("out", "", "output directory (default: ./dist)")
-	buildCmd.Flags().String("static", "", "static files directory")
-	buildCmd.Flags().String("url", "", "site root URL")
-	buildCmd.Flags().String("site-name", "", "site name")
-	buildCmd.Flags().String("author", "", "author name")
-	buildCmd.Flags().String("license-name", "", "license name (default: CC BY 4.0)")
-	buildCmd.Flags().String("license-url", "", "license URL (default: https://creativecommons.org/licenses/by/4.0/)")
+	addConfigFlags(buildCmd)
+	addConfigFlags(configCmd)
 
 	serveCmd.Flags().String("dir", "", "directory to serve (default: build_path from config, or ./dist)")
 	serveCmd.Flags().String("host", "localhost", "interface to bind")
@@ -286,5 +324,18 @@ func init() {
 
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(buildCmd)
+	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(serveCmd)
+}
+
+func addConfigFlags(cmd *cobra.Command) {
+	cmd.Flags().String("path", "", "notes path (default: NOTES_PATH)")
+	cmd.Flags().String("assets", "", "image assets path")
+	cmd.Flags().String("out", "", "output directory (default: ./dist)")
+	cmd.Flags().String("static", "", "static files directory")
+	cmd.Flags().String("url", "", "site root URL")
+	cmd.Flags().String("site-name", "", "site name")
+	cmd.Flags().String("author", "", "author name")
+	cmd.Flags().String("license-name", "", "license name (default: CC BY 4.0)")
+	cmd.Flags().String("license-url", "", "license URL (default: https://creativecommons.org/licenses/by/4.0/)")
 }

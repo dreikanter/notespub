@@ -136,7 +136,7 @@ func Load(yamlPath string, flagOverrides map[string]string) (Config, error) {
 		missing = append(missing, "author_name")
 	}
 	if len(missing) > 0 {
-		return Config{}, fmt.Errorf("missing required fields: %s", strings.Join(missing, ", "))
+		return cfg, fmt.Errorf("missing required fields: %s", strings.Join(missing, ", "))
 	}
 
 	return cfg, nil

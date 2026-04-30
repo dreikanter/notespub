@@ -1,14 +1,28 @@
 package main
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/dreikanter/npub/internal/config"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func resetFlags(cmd *cobra.Command) {
+	visit := func(f *pflag.Flag) {
+		f.Changed = false
+		_ = f.Value.Set(f.DefValue)
+	}
+	cmd.PersistentFlags().VisitAll(visit)
+	for _, sub := range cmd.Commands() {
+		sub.Flags().VisitAll(visit)
+	}
+}
 
 func TestInitConfigCreatesSampleInNewDirectory(t *testing.T) {
 	target := filepath.Join(t.TempDir(), "site")
@@ -90,6 +104,93 @@ func TestValidatePort(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestConfigCommandPrintsResolvedConfig(t *testing.T) {
+	dir := t.TempDir()
+	cfgPath := filepath.Join(dir, config.DefaultConfigFile)
+	require.NoError(t, os.WriteFile(cfgPath, []byte(`
+notes_path: "/tmp/notes"
+site_root_url: "https://example.com"
+site_name: "Test Site"
+author_name: "Test Author"
+`), 0o644))
+
+	var buf bytes.Buffer
+	rootCmd.SetOut(&buf)
+	rootCmd.SetErr(&buf)
+	rootCmd.SetArgs([]string{"config", "--config", cfgPath})
+	t.Cleanup(func() {
+		rootCmd.SetArgs(nil)
+		resetFlags(rootCmd)
+	})
+
+	require.NoError(t, rootCmd.Execute())
+
+	out := buf.String()
+	absPath, err := filepath.Abs(cfgPath)
+	require.NoError(t, err)
+	assert.Contains(t, out, "config: "+absPath)
+	assert.Contains(t, out, "notes_path: /tmp/notes")
+	assert.Contains(t, out, "assets_path: /tmp/notes/images")
+	assert.Contains(t, out, "build_path: ./dist")
+	assert.Contains(t, out, "static_path: /tmp/notes/static")
+	assert.Contains(t, out, "site_root_url: https://example.com")
+	assert.Contains(t, out, "site_name: Test Site")
+	assert.Contains(t, out, "author_name: Test Author")
+	assert.Contains(t, out, "license_name: CC BY 4.0")
+	assert.Contains(t, out, "license_url: https://creativecommons.org/licenses/by/4.0/")
+}
+
+func TestConfigCommandAppliesFlagOverrides(t *testing.T) {
+	dir := t.TempDir()
+	cfgPath := filepath.Join(dir, config.DefaultConfigFile)
+	require.NoError(t, os.WriteFile(cfgPath, []byte(`
+notes_path: "/tmp/notes"
+site_root_url: "https://example.com"
+site_name: "Test Site"
+author_name: "Test Author"
+`), 0o644))
+
+	var buf bytes.Buffer
+	rootCmd.SetOut(&buf)
+	rootCmd.SetErr(&buf)
+	rootCmd.SetArgs([]string{"config", "--config", cfgPath, "--url", "https://override.example.org", "--site-name", "Override"})
+	t.Cleanup(func() {
+		rootCmd.SetArgs(nil)
+		resetFlags(rootCmd)
+	})
+
+	require.NoError(t, rootCmd.Execute())
+
+	out := buf.String()
+	assert.Contains(t, out, "site_root_url: https://override.example.org")
+	assert.Contains(t, out, "site_name: Override")
+}
+
+func TestConfigCommandPrintsPartialConfigOnMissingFields(t *testing.T) {
+	dir := t.TempDir()
+	cfgPath := filepath.Join(dir, config.DefaultConfigFile)
+	require.NoError(t, os.WriteFile(cfgPath, []byte(`
+notes_path: "/tmp/notes"
+`), 0o644))
+
+	var buf bytes.Buffer
+	rootCmd.SetOut(&buf)
+	rootCmd.SetErr(&buf)
+	rootCmd.SetArgs([]string{"config", "--config", cfgPath})
+	t.Cleanup(func() {
+		rootCmd.SetArgs(nil)
+		resetFlags(rootCmd)
+	})
+
+	err := rootCmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "missing required fields")
+
+	out := buf.String()
+	assert.Contains(t, out, "notes_path: /tmp/notes")
+	assert.Contains(t, out, "build_path: ./dist")
 }
 
 func TestResolveConfigPath(t *testing.T) {

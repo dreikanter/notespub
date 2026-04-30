@@ -91,6 +91,14 @@ Build the site:
 npub build
 ```
 
+Inspect the resolved configuration:
+
+```sh
+npub config
+```
+
+The `config` command prints the absolute path of the config file npub will use along with every option after merging YAML, CLI flags, environment variables, and defaults. It accepts the same overrides as `build`, so `npub config --path ~/notes --url https://example.com` previews how a build would see its configuration.
+
 Serve locally:
 
 ```sh
