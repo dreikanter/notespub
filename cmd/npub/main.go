@@ -77,7 +77,12 @@ var serveCmd = &cobra.Command{
 
 		if !cmd.Flags().Changed("dir") {
 			cfgPath, _ := cmd.Flags().GetString("config")
-			if cfg, err := loadConfig(cmd, cfgPath); err == nil && cfg.BuildPath != "" {
+			explicitConfig := cmd.Flags().Changed("config") || os.Getenv("NPUB_CONFIG") != ""
+			cfg, err := loadConfig(cmd, cfgPath)
+			switch {
+			case err != nil && explicitConfig:
+				return err
+			case err == nil && cfg.BuildPath != "":
 				dir = cfg.BuildPath
 			}
 		}
