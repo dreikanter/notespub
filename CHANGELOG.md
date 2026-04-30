@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.13] - 2026-04-30
+
+### Changed
+
+- Trim `npub --help` to a one-line `Long` description that points at `npub config` for resolution details. The config-discovery order and `NOTES_PATH` double-duty paragraphs move under `npub config --help`, where they describe how the printed configuration is assembled. ([#74])
+
+[#74]: https://github.com/dreikanter/npub/pull/74
+
 ## [0.2.12] - 2026-04-30
 
 ### Added
