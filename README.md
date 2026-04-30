@@ -94,7 +94,7 @@ Serve locally:
 npub serve
 ```
 
-The `serve` command starts a local HTTP server on port 4000 (override with `--port`). Pass `--path` to choose the directory to serve, or set `NOTES_PATH`; if neither is set the command fails with an explicit error.
+The `serve` command starts a local HTTP server on port 4000 (override with `--port`). It serves the `build_path` from your config (or `./dist` if no config is found). Override with `--dir`.
 
 ## Notes format
 
