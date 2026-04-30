@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.5] - 2026-04-30
+
+### Added
+
+- `npub serve --host` flag (default `localhost`) to control the bind interface. Previously `serve` always bound on all interfaces; the safer default now only listens on loopback. Pass `--host 0.0.0.0` to expose on the LAN.
+
+### Changed
+
+- `npub init`'s positional argument is now `[dir]` (was `[path]`) for clearer naming and to avoid confusion with `--path` (notes path).
+
 ## [0.2.4] - 2026-04-30
 
 ### Changed

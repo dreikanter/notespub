@@ -31,7 +31,7 @@ var rootCmd = &cobra.Command{
 }
 
 var initCmd = &cobra.Command{
-	Use:   "init [path]",
+	Use:   "init [dir]",
 	Short: "Create a sample npub configuration",
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -75,6 +75,7 @@ var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Serve the built site locally",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		host, _ := cmd.Flags().GetString("host")
 		port, _ := cmd.Flags().GetString("port")
 		dir, _ := cmd.Flags().GetString("dir")
 		if dir == "" {
@@ -99,8 +100,8 @@ var serveCmd = &cobra.Command{
 		if !info.IsDir() {
 			return fmt.Errorf("cannot serve %q: not a directory", dir)
 		}
-		addr := ":" + port
-		log.Printf("serving %s on http://localhost%s", dir, addr)
+		addr := host + ":" + port
+		log.Printf("serving %s on http://%s", dir, addr)
 		return http.ListenAndServe(addr, http.FileServer(http.Dir(dir)))
 	},
 }
@@ -222,6 +223,7 @@ func init() {
 
 	serveCmd.Flags().String("config", "", "config file path (default: npub.yml)")
 	serveCmd.Flags().String("dir", "", "directory to serve (default: build_path from config, or ./dist)")
+	serveCmd.Flags().String("host", "localhost", "interface to bind")
 	serveCmd.Flags().String("port", "4000", "port to listen on")
 
 	rootCmd.AddCommand(initCmd)

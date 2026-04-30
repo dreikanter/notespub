@@ -59,7 +59,7 @@ Config file discovery order:
 2. `npub.yml` inside `$NOTES_PATH` (or `--path` value) if it exists
 3. `npub.yml` in the current directory
 
-Run `npub init [path]` to create a commented `npub.yml` sample in a directory. If `path` is omitted, the current directory is used.
+Run `npub init [dir]` to create a commented `npub.yml` sample in a directory. If `dir` is omitted, the current directory is used.
 
 The optional `intro` field renders as a paragraph above the posts list on the index page. Leave it empty or unset to omit.
 
@@ -93,7 +93,7 @@ Serve locally:
 npub serve
 ```
 
-The `serve` command starts a local HTTP server on port 4000 (override with `--port`). It serves the `build_path` from your config (or `./dist` if no config is found). Override with `--dir`.
+The `serve` command starts a local HTTP server on `localhost:4000` (override with `--host` and `--port`). It serves the `build_path` from your config (or `./dist` if no config is found). Override with `--dir`.
 
 ## Notes format
 
