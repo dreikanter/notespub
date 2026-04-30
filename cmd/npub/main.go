@@ -55,20 +55,8 @@ var initCmd = &cobra.Command{
 var buildCmd = &cobra.Command{
 	Use:   "build",
 	Short: "Build the static site",
-	Long: `Build the static site from notes.
-
-Reads notes from notes_path, renders them to HTML, and writes the result to
-build_path.
-
-Examples:
-  # Use npub.yml from $NOTES_PATH or the current directory
-  npub build
-
-  # Override the config file
-  npub --config ./prod.yml build
-
-  # Override individual settings via flags
-  npub build --path ~/notes --out ./public --url https://example.com`,
+	Long: `Read notes from notes_path, render to HTML, write to build_path. Flags below
+override the corresponding YAML keys.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfgPath, _ := cmd.Flags().GetString("config")
 		cfg, _, err := loadConfig(cmd, cfgPath)
@@ -92,29 +80,18 @@ Examples:
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Print resolved configuration",
-	Long: `Print the absolute path of the resolved config file along with the final value
-of every configuration option after merging YAML, CLI flags, environment
-variables, and built-in defaults.
+	Long: `Print the resolved config path and final values after merging YAML, CLI flags,
+environment, and defaults. Accepts the same overrides as build, so you can
+preview a build's configuration without running it. If required fields are
+missing, the partial config is still printed and the command exits non-zero.
 
-Accepts the same overrides as build, so you can preview how a build would see
-its configuration without running it. When required fields are missing, the
-partial configuration is still printed and the command exits with an error.
+Config discovery order:
+  1. --config
+  2. $NOTES_PATH/npub.yml (or --path/npub.yml, for build)
+  3. ./npub.yml
 
-Config file discovery order:
-  1. --config flag (if set)
-  2. npub.yml inside $NOTES_PATH (or the --path value, for build)
-  3. npub.yml in the current directory
-
-NOTES_PATH does double duty:
-  1. Source for notes_path when neither --path nor the YAML sets it.
-  2. Hint location for finding npub.yml during config discovery.
-
-Examples:
-  # Show the resolved configuration
-  npub config
-
-  # Preview the effect of overrides
-  npub config --path ~/notes --url https://example.com`,
+NOTES_PATH supplies notes_path when --path and YAML don't set it, and hints
+config discovery.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfgFlag, _ := cmd.Flags().GetString("config")
 		cfg, cfgPath, loadErr := loadConfig(cmd, cfgFlag)
@@ -143,21 +120,8 @@ func printConfig(w io.Writer, cfgPath string, cfg config.Config) error {
 var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Serve the built site locally",
-	Long: `Serve the built site over HTTP from a local directory.
-
-Without --dir, serve resolves the directory from build_path in the config
-(falling back to ./dist when no config is found). With --dir, the config is
-not consulted.
-
-Examples:
-  # Serve build_path from the discovered config (or ./dist)
-  npub serve
-
-  # Serve a specific directory
-  npub serve --dir ./public
-
-  # Bind to all interfaces on a custom port
-  npub serve --host 0.0.0.0 --port 8080`,
+	Long: `Serve the built site over HTTP. Without --dir, uses build_path from the
+config (falling back to ./dist when no config is found).`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		host, _ := cmd.Flags().GetString("host")
 		port, _ := cmd.Flags().GetInt("port")
