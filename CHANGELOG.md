@@ -4,7 +4,11 @@
 
 ### Changed
 
-- `npub serve` once again defaults to the configured `build_path` rather than a notes path. The flag is `--dir` (override the directory to serve), and `--config`/`NPUB_CONFIG` select the config file. Falls back to `./dist` when no config is found; surfaces config errors when a config was explicitly requested.
+- `npub serve` once again defaults to the configured `build_path` rather than a notes path. The flag is `--dir` (override the directory to serve), and `--config` selects the config file. Falls back to `./dist` when no config is found; surfaces config errors when a config was explicitly requested.
+
+### Removed
+
+- Drop the `NPUB_CONFIG` environment variable. Use `--config` or rely on the standard discovery order (`npub.yml` inside `$NOTES_PATH`, then in the current directory).
 
 ## [0.2.3] - 2026-04-30
 

@@ -79,8 +79,8 @@ var serveCmd = &cobra.Command{
 		dir, _ := cmd.Flags().GetString("dir")
 		if dir == "" {
 			cfgPath, _ := cmd.Flags().GetString("config")
-			explicitConfig := cmd.Flags().Changed("config") || os.Getenv("NPUB_CONFIG") != ""
-			cfgPath = resolveConfigPath(cfgPath, os.Getenv("NPUB_CONFIG"), os.Getenv("NOTES_PATH"))
+			explicitConfig := cmd.Flags().Changed("config")
+			cfgPath = resolveConfigPath(cfgPath, os.Getenv("NOTES_PATH"))
 			cfg, err := config.Load(cfgPath, nil)
 			switch {
 			case err != nil && explicitConfig:
@@ -157,12 +157,9 @@ func initConfig(path string) (string, error) {
 	return cfgPath, nil
 }
 
-func resolveConfigPath(flagValue, envValue, notesPath string) string {
+func resolveConfigPath(flagValue, notesPath string) string {
 	if flagValue != "" {
 		return expandHome(os.ExpandEnv(flagValue))
-	}
-	if envValue != "" {
-		return expandHome(os.ExpandEnv(envValue))
 	}
 	if notesPath != "" {
 		// Match config.Load's path handling for notes_path: expand ~/ but not $VARS.
@@ -181,7 +178,7 @@ func loadConfig(cmd *cobra.Command, cfgPath string) (config.Config, error) {
 	if notesPath == "" {
 		notesPath = os.Getenv("NOTES_PATH")
 	}
-	cfgPath = resolveConfigPath(cfgPath, os.Getenv("NPUB_CONFIG"), notesPath)
+	cfgPath = resolveConfigPath(cfgPath, notesPath)
 
 	flagNames := []string{"path", "assets", "out", "static", "url", "site-name", "author", "license-name", "license-url"}
 	flagOverrides := make(map[string]string)
