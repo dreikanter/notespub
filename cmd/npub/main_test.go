@@ -66,6 +66,32 @@ func TestInitConfigRejectsNonDirectoryPath(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestValidatePort(t *testing.T) {
+	tests := []struct {
+		name    string
+		port    int
+		wantErr bool
+	}{
+		{name: "lowest valid", port: 1},
+		{name: "common dev port", port: 4000},
+		{name: "highest valid", port: 65535},
+		{name: "zero rejected", port: 0, wantErr: true},
+		{name: "negative rejected", port: -1, wantErr: true},
+		{name: "above range rejected", port: 65536, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validatePort(tt.port)
+			if tt.wantErr {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "must be between 1 and 65535")
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestResolveConfigPath(t *testing.T) {
 	notesDir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(notesDir, config.DefaultConfigFile), []byte("---\n"), 0o644))

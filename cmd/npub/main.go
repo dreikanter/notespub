@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/debug"
+	"strconv"
 
 	"github.com/dreikanter/notesctl/note"
 	"github.com/dreikanter/npub"
@@ -76,7 +77,10 @@ var serveCmd = &cobra.Command{
 	Short: "Serve the built site locally",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		host, _ := cmd.Flags().GetString("host")
-		port, _ := cmd.Flags().GetString("port")
+		port, _ := cmd.Flags().GetInt("port")
+		if err := validatePort(port); err != nil {
+			return err
+		}
 		dir, _ := cmd.Flags().GetString("dir")
 		explicitDir := cmd.Flags().Changed("dir")
 		if !explicitDir {
@@ -98,7 +102,7 @@ var serveCmd = &cobra.Command{
 		if !info.IsDir() {
 			return fmt.Errorf("cannot serve %q: not a directory", dir)
 		}
-		addr := host + ":" + port
+		addr := host + ":" + strconv.Itoa(port)
 		ln, err := net.Listen("tcp", addr)
 		if err != nil {
 			return err
@@ -106,6 +110,13 @@ var serveCmd = &cobra.Command{
 		log.Printf("serving %s on http://%s", dir, ln.Addr().String())
 		return http.Serve(ln, http.FileServer(http.Dir(dir)))
 	},
+}
+
+func validatePort(port int) error {
+	if port < 1 || port > 65535 {
+		return fmt.Errorf("invalid port %d: must be between 1 and 65535", port)
+	}
+	return nil
 }
 
 func validateNotesPath(path string) error {
@@ -229,7 +240,7 @@ func init() {
 
 	serveCmd.Flags().String("dir", "", "directory to serve (default: build_path from config, or ./dist)")
 	serveCmd.Flags().String("host", "localhost", "interface to bind")
-	serveCmd.Flags().String("port", "4000", "port to listen on")
+	serveCmd.Flags().Int("port", 4000, "port to listen on")
 
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(buildCmd)
