@@ -4,7 +4,7 @@
 
 ### Changed
 
-- Trim `npub --help` to a one-line `Long` description that points at `npub config` for resolution details. The config-discovery order and `NOTES_PATH` double-duty paragraphs move under `npub config --help`, where they describe how the printed configuration is assembled. ([#74])
+- Trim help text across the CLI for brevity. `npub --help` is a one-line `Long` that points at `npub config` for resolution details. `npub build --help` drops the prose paragraph and the three usage examples in favor of a one-sentence note that flags override YAML. `npub config --help` keeps the resolution details (now the only place they appear) but compacts the discovery list and folds the `NOTES_PATH` double-duty paragraph into a single sentence. `npub serve --help` drops its three examples; the `--dir` fallback note is preserved. ([#74])
 
 [#74]: https://github.com/dreikanter/npub/pull/74
 
