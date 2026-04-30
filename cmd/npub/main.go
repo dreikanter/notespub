@@ -88,7 +88,7 @@ var serveCmd = &cobra.Command{
 			switch {
 			case err != nil && explicitConfig:
 				return err
-			case err == nil && cfg.BuildPath != "":
+			case err == nil:
 				dir = cfg.BuildPath
 			default:
 				dir = "./dist"
