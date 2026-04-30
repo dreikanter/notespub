@@ -58,7 +58,7 @@ var buildCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		if err := validateNotesPath(cfg.NotesPath, "path"); err != nil {
+		if err := validateNotesPath(cfg.NotesPath); err != nil {
 			return err
 		}
 
@@ -115,9 +115,9 @@ var serveCmd = &cobra.Command{
 	},
 }
 
-func validateNotesPath(path, flagName string) error {
+func validateNotesPath(path string) error {
 	if path == "" {
-		return fmt.Errorf("notes path is not set: pass --%s or set NOTES_PATH", flagName)
+		return fmt.Errorf("notes path is not set: pass --path or set NOTES_PATH")
 	}
 	info, err := os.Stat(path)
 	if err != nil {
