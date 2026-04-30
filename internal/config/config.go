@@ -85,7 +85,7 @@ func Load(yamlPath string, flagOverrides map[string]string) (Config, error) {
 	}
 
 	flagMap := map[string]*string{
-		"notes":        &cfg.NotesPath,
+		"path":         &cfg.NotesPath,
 		"assets":       &cfg.AssetsPath,
 		"out":          &cfg.BuildPath,
 		"static":       &cfg.StaticPath,

@@ -48,7 +48,7 @@ site_name: "Test Site"
 author_name: "Test Author"
 `)
 
-	cfg, err := Load(yamlPath, map[string]string{"notes": "/flag/notes"})
+	cfg, err := Load(yamlPath, map[string]string{"path": "/flag/notes"})
 	require.NoError(t, err)
 
 	assert.Equal(t, "/flag/notes", cfg.NotesPath)

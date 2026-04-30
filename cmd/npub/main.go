@@ -145,13 +145,13 @@ func resolveConfigPath(flagValue, envValue, notesPath string) string {
 func loadConfig(cmd *cobra.Command, cfgPath string) (config.Config, error) {
 	// Resolve notes path here too (not only in config.Load) because config
 	// discovery needs it before the yaml is read.
-	notesPath, _ := cmd.Flags().GetString("notes")
+	notesPath, _ := cmd.Flags().GetString("path")
 	if notesPath == "" {
 		notesPath = os.Getenv("NOTES_PATH")
 	}
 	cfgPath = resolveConfigPath(cfgPath, os.Getenv("NPUB_CONFIG"), notesPath)
 
-	flagNames := []string{"notes", "assets", "out", "static", "url", "site-name", "author", "license-name", "license-url"}
+	flagNames := []string{"path", "assets", "out", "static", "url", "site-name", "author", "license-name", "license-url"}
 	flagOverrides := make(map[string]string)
 	for _, name := range flagNames {
 		if cmd.Flags().Changed(name) {
@@ -181,7 +181,7 @@ func init() {
 	rootCmd.Version = Version
 
 	buildCmd.Flags().String("config", "", "config file path (default: npub.yml)")
-	buildCmd.Flags().String("notes", "", "notes store path")
+	buildCmd.Flags().String("path", "", "notes store path (default: NOTES_PATH)")
 	buildCmd.Flags().String("assets", "", "image assets path")
 	buildCmd.Flags().String("out", "", "output directory (default: ./dist)")
 	buildCmd.Flags().String("static", "", "static files directory")
