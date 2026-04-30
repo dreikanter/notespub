@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.2] - 2026-04-30
+
+### Fixed
+
+- `npub serve` now defaults to the configured `build_path` instead of always falling back to `./dist`, so it serves the same directory `npub build` writes to. Pass `--dir` to override.
+
 ## [0.2.1] - 2026-04-26
 
 ### Added
