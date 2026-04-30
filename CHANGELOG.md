@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.10] - 2026-04-30
+
+### Fixed
+
+- `npub serve --port` is now declared as an `Int` flag, so cobra rejects non-numeric values up front (e.g. `--port abc`) instead of letting `net.Listen` fall back to `/etc/services` lookup with the opaque `lookup tcp/abc: unknown port`. A `validatePort` range check in `RunE` rejects values outside `1..65535` with a clear pre-bind error. ([#70])
+
+[#70]: https://github.com/dreikanter/npub/pull/70
+
 ## [0.2.9] - 2026-04-30
 
 ### Changed
