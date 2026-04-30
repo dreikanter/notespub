@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.12] - 2026-04-30
+
+### Added
+
+- `npub config` prints the absolute path of the resolved config file along with the final value of every option after merging YAML, CLI flags, environment variables, and built-in defaults. Accepts the same overrides as `build` so you can preview how a build would see its configuration. When required fields are missing, the partial configuration is still printed and the command exits with an error. ([#73])
+
+[#73]: https://github.com/dreikanter/npub/pull/73
+
 ## [0.2.11] - 2026-04-30
 
 ### Changed
