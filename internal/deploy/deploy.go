@@ -109,6 +109,17 @@ func Prepare(repoURL, gitDir, buildDir string, opt Options) error {
 	if !info.IsDir() {
 		return fmt.Errorf("build path %s is not a directory", buildDir)
 	}
+	// Refuse to deploy from an empty build directory: with a clean tree
+	// reset to origin's last published state, `git add -A` would stage a
+	// deletion of every file in origin and commit a wipe-out. Force the
+	// user to rebuild instead.
+	empty, err := dirHasNoContent(buildDir)
+	if err != nil {
+		return err
+	}
+	if empty {
+		return fmt.Errorf("build directory %s is empty; run `npub build` first", buildDir)
+	}
 
 	if _, err := os.Stat(gitDir); err != nil {
 		if !os.IsNotExist(err) {
@@ -266,6 +277,21 @@ func gitOutput(dir string, args ...string) (string, error) {
 		return "", fmt.Errorf("git %s: %w", strings.Join(args, " "), err)
 	}
 	return strings.TrimSpace(out.String()), nil
+}
+
+// dirHasNoContent reports whether dir contains no entries other than
+// dotfiles. Returns true for a directory that is fully empty too.
+func dirHasNoContent(dir string) (bool, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return false, fmt.Errorf("reading %s: %w", dir, err)
+	}
+	for _, e := range entries {
+		if !strings.HasPrefix(e.Name(), ".") {
+			return false, nil
+		}
+	}
+	return true, nil
 }
 
 func lastNonEmptyLine(s string) string {

@@ -62,7 +62,8 @@ var buildCmd = &cobra.Command{
 
 Output directory resolution:
   --out <dir>              explicit override
-  deploy_repo (in YAML)    ~/.cache/npub/<repo>/build
+  deploy_repo (in YAML)    <cache_path>/build (cache_path defaults to
+                           ~/.cache/npub/<repo>)
   fallback                 ./dist
 
 build runs offline: it never talks to the deploy_repo remote. All git
@@ -98,12 +99,13 @@ var deployCmd = &cobra.Command{
 	Short: "Commit and push the built site to deploy_repo",
 	Long: `Commit the contents of the build directory to deploy_repo and push.
 
-deploy maintains a bare clone of deploy_repo at ~/.cache/npub/<repo>/git
-and uses ~/.cache/npub/<repo>/build (produced by npub build) as a temporary
-work-tree when committing. No second copy of the site is kept on disk.
+deploy maintains a bare clone of deploy_repo at <cache_path>/git and uses
+<cache_path>/build (produced by npub build) as a temporary work-tree when
+committing. cache_path defaults to ~/.cache/npub/<repo>.
 
-deploy does not rebuild; run npub build first. With --dry-run, deploy
-commits locally but skips the push.`,
+deploy does not rebuild; run npub build first. An empty build directory
+is rejected so a partial or missing build cannot wipe the deployed site.
+With --dry-run, deploy commits locally but skips the push.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfgPath, _ := cmd.Flags().GetString("config")
 		cfg, _, err := loadConfig(cmd, cfgPath)
@@ -195,8 +197,9 @@ func printConfig(w io.Writer, cfgPath string, cfg config.Config) error {
 var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Serve the built site locally",
-	Long: `Serve the built site over HTTP. Without --dir, uses the deploy_repo cache
-directory if set, otherwise ./dist.`,
+	Long: `Serve the built site over HTTP. Without --dir, uses <cache_path>/build
+when deploy_repo is set (cache_path defaults to ~/.cache/npub/<repo>),
+otherwise ./dist.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		host, _ := cmd.Flags().GetString("host")
 		port, _ := cmd.Flags().GetInt("port")
@@ -387,8 +390,7 @@ func init() {
 
 	addConfigFlags(buildCmd)
 	addConfigFlags(configCmd)
-	addConfigFlags(deployCmd)
-	buildCmd.Flags().String("out", "", "output directory (overrides deploy_repo cache; default: ./dist)")
+	buildCmd.Flags().String("out", "", "output directory (overrides deploy_repo cache; defaults to <cache_path>/build, or ./dist)")
 	configCmd.Flags().String("out", "", "preview build path override")
 	deployCmd.Flags().Bool("dry-run", false, "commit locally but skip git push")
 
