@@ -6,9 +6,11 @@ import (
 	"html/template"
 	"io"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -199,6 +201,7 @@ func Build(store note.Store, cfg config.Config, assets Assets) error {
 
 	// 2. Build note-page models and the ID → public-path index.
 	notePages, noteIndex := buildNotePages(entries, cfg.SiteRootURL)
+	warnDuplicateSlugs(notePages)
 
 	// 3. Render Markdown for each note (now that noteIndex is complete).
 	imgCache := images.NewCache(cfg.AssetsPath)
@@ -280,19 +283,28 @@ func Build(store note.Store, cfg config.Config, assets Assets) error {
 
 		// Copy attachments.
 		for _, att := range np.Attachments {
-			destDir := filepath.Join(cfg.BuildPath, np.UID, np.Slug)
+			destDir := filepath.Join(cfg.BuildPath, np.Slug)
 			if err := imgCache.CopyTo(images.Entry{FileName: att.FileName, PageUID: att.PageUID}, destDir); err != nil {
 				return fmt.Errorf("copying attachment %s: %w", att.FileName, err)
 			}
 		}
 
-		// Write redirect page.
-		rp := page.RedirectPage{
-			UID:        np.UID,
+		// Write redirect alias for the legacy /<UID>/ path.
+		uidRedirect := page.RedirectPage{
+			FromPath:   np.UID,
 			RedirectTo: "/" + np.PublicPath(),
 		}
-		if err := writeRedirectPage(tmpl, cfg.BuildPath, rp); err != nil {
+		if err := writeRedirectPage(tmpl, cfg.BuildPath, uidRedirect); err != nil {
 			return fmt.Errorf("writing redirect page %s: %w", np.UID, err)
+		}
+
+		// Write redirect alias for the legacy /<UID>/<slug>/ path.
+		legacyRedirect := page.RedirectPage{
+			FromPath:   filepath.ToSlash(filepath.Join(np.UID, np.Slug)),
+			RedirectTo: "/" + np.PublicPath(),
+		}
+		if err := writeRedirectPage(tmpl, cfg.BuildPath, legacyRedirect); err != nil {
+			return fmt.Errorf("writing redirect page %s/%s: %w", np.UID, np.Slug, err)
 		}
 	}
 
@@ -388,6 +400,26 @@ func buildNotePages(entries []note.Entry, siteRootURL string) ([]page.NotePage, 
 		pages = append(pages, np)
 	}
 	return pages, index
+}
+
+// warnDuplicateSlugs logs a warning when multiple notes share the same slug.
+// Duplicates collide on the same output path; the user must rename or set an
+// explicit slug to disambiguate.
+func warnDuplicateSlugs(pages []page.NotePage) {
+	uidsBySlug := make(map[string][]string)
+	for _, p := range pages {
+		uidsBySlug[p.Slug] = append(uidsBySlug[p.Slug], p.UID)
+	}
+	dupes := make([]string, 0)
+	for slug := range uidsBySlug {
+		if len(uidsBySlug[slug]) > 1 {
+			dupes = append(dupes, slug)
+		}
+	}
+	sort.Strings(dupes)
+	for _, slug := range dupes {
+		log.Printf("warning: duplicate slug %q used by notes %s", slug, strings.Join(uidsBySlug[slug], ", "))
+	}
 }
 
 // chooseSlug returns the slug to use for e, falling back from Meta.Slug to
