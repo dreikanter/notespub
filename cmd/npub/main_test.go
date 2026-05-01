@@ -38,8 +38,8 @@ func TestInitConfigCreatesSampleInNewDirectory(t *testing.T) {
 	content := string(data)
 	for _, want := range []string{
 		`# notes_path: ""`,
-		`# build_path: "./dist"`,
 		`# license_name: "CC BY 4.0"`,
+		`# deploy_repo: ""`,
 	} {
 		assert.Contains(t, content, want)
 	}
@@ -133,13 +133,14 @@ author_name: "Test Author"
 	assert.Contains(t, out, "config: "+absPath)
 	assert.Contains(t, out, "notes_path: /tmp/notes")
 	assert.Contains(t, out, "assets_path: /tmp/notes/images")
-	assert.Contains(t, out, "build_path: ./dist")
 	assert.Contains(t, out, "static_path: /tmp/notes/static")
 	assert.Contains(t, out, "site_root_url: https://example.com")
 	assert.Contains(t, out, "site_name: Test Site")
 	assert.Contains(t, out, "author_name: Test Author")
 	assert.Contains(t, out, "license_name: CC BY 4.0")
 	assert.Contains(t, out, "license_url: https://creativecommons.org/licenses/by/4.0/")
+	assert.Contains(t, out, "deploy_repo: \"\"")
+	assert.NotContains(t, out, "build_path:")
 }
 
 func TestConfigCommandAppliesFlagOverrides(t *testing.T) {
@@ -190,7 +191,6 @@ notes_path: "/tmp/notes"
 
 	out := buf.String()
 	assert.Contains(t, out, "notes_path: /tmp/notes")
-	assert.Contains(t, out, "build_path: ./dist")
 }
 
 func TestResolveConfigPath(t *testing.T) {

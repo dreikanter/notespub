@@ -71,11 +71,10 @@ func TestCleanBuildDirRejectsHome(t *testing.T) {
 	require.Error(t, cleanBuildDir(home))
 }
 
-func testConfig(t *testing.T, buildPath, assetsPath string) config.Config {
+func testConfig(t *testing.T, _, assetsPath string) config.Config {
 	t.Helper()
 	return config.Config{
 		AssetsPath:  assetsPath,
-		BuildPath:   buildPath,
 		SiteRootURL: "https://example.com",
 		SiteName:    "Test Site",
 		AuthorName:  "Test Author",
@@ -106,7 +105,7 @@ func TestBuildPublicNote(t *testing.T) {
 		StyleCSS:   []byte("/* test */"),
 		FaviconSVG: []byte("<svg></svg>"),
 	}
-	require.NoError(t, Build(store, cfg, assets))
+	require.NoError(t, Build(store, cfg, buildDir, assets))
 
 	notePath := filepath.Join(buildDir, "my-test-note", "index.html")
 	data, err := os.ReadFile(notePath)
@@ -169,7 +168,7 @@ func TestBuildSkipsPrivateNote(t *testing.T) {
 		StyleCSS:   []byte("/* test */"),
 		FaviconSVG: []byte("<svg></svg>"),
 	}
-	require.NoError(t, Build(store, cfg, assets))
+	require.NoError(t, Build(store, cfg, buildDir, assets))
 
 	assert.NoDirExists(t, filepath.Join(buildDir, "20230130_3961"))
 
@@ -214,7 +213,7 @@ func TestBuildNoteLinkResolution(t *testing.T) {
 		StyleCSS:   []byte("/* test */"),
 		FaviconSVG: []byte("<svg></svg>"),
 	}
-	require.NoError(t, Build(store, cfg, assets))
+	require.NoError(t, Build(store, cfg, buildDir, assets))
 
 	data, err := os.ReadFile(filepath.Join(buildDir, "first-note", "index.html"))
 	require.NoError(t, err)

@@ -179,16 +179,18 @@ type Assets struct {
 	FaviconSVG []byte
 }
 
-// Build generates the static site from notes.
-func Build(store note.Store, cfg config.Config, assets Assets) error {
+// Build generates the static site from notes into buildPath. buildPath is
+// the directory the rendered files are written to; cfg supplies everything
+// else (notes location, site metadata, etc).
+func Build(store note.Store, cfg config.Config, buildPath string, assets Assets) error {
 	// 0. Clean build directory.
-	if err := cleanBuildDir(cfg.BuildPath); err != nil {
+	if err := cleanBuildDir(buildPath); err != nil {
 		return err
 	}
 
 	// 0b. Copy static files.
 	if cfg.StaticPath != "" {
-		if err := copyStaticFiles(cfg.StaticPath, cfg.BuildPath); err != nil {
+		if err := copyStaticFiles(cfg.StaticPath, buildPath); err != nil {
 			return fmt.Errorf("copying static files: %w", err)
 		}
 	}
@@ -277,13 +279,13 @@ func Build(store note.Store, cfg config.Config, assets Assets) error {
 			CanonicalPath:   np.CanonicalPath(),
 		}
 
-		if err := writeHTMLPage(tmpl, cfg.BuildPath, np.LocalPath(), "note.html", inner, cfgData, pd); err != nil {
+		if err := writeHTMLPage(tmpl, buildPath, np.LocalPath(), "note.html", inner, cfgData, pd); err != nil {
 			return fmt.Errorf("writing note page %s: %w", np.UID, err)
 		}
 
 		// Copy attachments.
 		for _, att := range np.Attachments {
-			destDir := filepath.Join(cfg.BuildPath, np.Slug)
+			destDir := filepath.Join(buildPath, np.Slug)
 			if err := imgCache.CopyTo(images.Entry{FileName: att.FileName, PageUID: att.PageUID}, destDir); err != nil {
 				return fmt.Errorf("copying attachment %s: %w", att.FileName, err)
 			}
@@ -294,7 +296,7 @@ func Build(store note.Store, cfg config.Config, assets Assets) error {
 			FromPath:   np.UID,
 			RedirectTo: "/" + np.PublicPath(),
 		}
-		if err := writeRedirectPage(tmpl, cfg.BuildPath, uidRedirect); err != nil {
+		if err := writeRedirectPage(tmpl, buildPath, uidRedirect); err != nil {
 			return fmt.Errorf("writing redirect page %s: %w", np.UID, err)
 		}
 
@@ -303,7 +305,7 @@ func Build(store note.Store, cfg config.Config, assets Assets) error {
 			FromPath:   filepath.ToSlash(filepath.Join(np.UID, np.Slug)),
 			RedirectTo: "/" + np.PublicPath(),
 		}
-		if err := writeRedirectPage(tmpl, cfg.BuildPath, legacyRedirect); err != nil {
+		if err := writeRedirectPage(tmpl, buildPath, legacyRedirect); err != nil {
 			return fmt.Errorf("writing redirect page %s/%s: %w", np.UID, np.Slug, err)
 		}
 	}
@@ -324,7 +326,7 @@ func Build(store note.Store, cfg config.Config, assets Assets) error {
 		Title:           "",
 		MetaDescription: cfg.SiteName,
 	}
-	if err := writeHTMLPage(tmpl, cfg.BuildPath, "index.html", "index.html", indexInner, cfgData, indexPD); err != nil {
+	if err := writeHTMLPage(tmpl, buildPath, "index.html", "index.html", indexInner, cfgData, indexPD); err != nil {
 		return fmt.Errorf("writing index page: %w", err)
 	}
 
@@ -346,7 +348,7 @@ func Build(store note.Store, cfg config.Config, assets Assets) error {
 			MetaDescription: fmt.Sprintf("Notes tagged with %s", tag),
 			CanonicalPath:   tp.CanonicalPath(),
 		}
-		if err := writeHTMLPage(tmpl, cfg.BuildPath, tp.LocalPath(), "tag.html", tagInner, cfgData, tagPD); err != nil {
+		if err := writeHTMLPage(tmpl, buildPath, tp.LocalPath(), "tag.html", tagInner, cfgData, tagPD); err != nil {
 			return fmt.Errorf("writing tag page %s: %w", tag, err)
 		}
 	}
@@ -365,7 +367,7 @@ func Build(store note.Store, cfg config.Config, assets Assets) error {
 		Config:    cfgData,
 		NotePages: feedNotes,
 	}
-	if err := writeFile(cfg.BuildPath, "feed.xml", func() ([]byte, error) {
+	if err := writeFile(buildPath, "feed.xml", func() ([]byte, error) {
 		var buf strings.Builder
 		if err := feedTmpl.ExecuteTemplate(&buf, "feed.xml", fd); err != nil {
 			return nil, err

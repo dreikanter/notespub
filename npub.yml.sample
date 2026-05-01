@@ -8,9 +8,6 @@
 # Directory for cached image assets. Defaults to <notes_path>/images.
 # assets_path: ""
 
-# Directory where the generated site is written.
-# build_path: "./dist"
-
 # Directory with static files copied to the build output root.
 # Defaults to <notes_path>/static.
 # static_path: ""
@@ -32,3 +29,14 @@
 
 # Optional short paragraph shown above the posts list on the index page.
 # intro: ""
+
+# Git repository that hosts the published site. When set, `npub build`
+# writes the site to <cache_path>/build (offline) and `npub deploy`
+# bare-clones the remote into <cache_path>/git and commits the build
+# directory's contents directly via git's --git-dir + --work-tree.
+# deploy_repo: ""
+
+# Per-site cache directory that holds build/ and git/. Defaults to
+# ~/.cache/npub/<repo>. Override to keep cache state on a different volume
+# or to give multiple npub.yml configs distinct cache locations.
+# cache_path: ""

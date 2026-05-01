@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.14] - 2026-05-01
+
+### Added
+
+- `npub deploy` publishes the site to a git remote configured via the new `deploy_repo` YAML key. `npub build` writes the rendered site to `<cache_path>/build` (offline; no git or network involvement); `npub deploy` keeps a bare clone of `deploy_repo` at `<cache_path>/git` and uses `build/` as a temporary work-tree via `--git-dir` + `--work-tree`, so a single `git add -A` reconciles changed, added, and deleted files against origin's last published state. No second copy of the site is held on disk. Pass `--dry-run` to commit locally without pushing. Errors at every step (missing `git`, malformed `deploy_repo`, clone failure, mismatched origin URL, missing build output, push rejection) surface git's own message rather than a bare exit code. ([#78])
+- New `cache_path` YAML key overrides the per-site cache directory. Defaults to `~/.cache/npub/<repo>`. Use it to keep cache state on a different volume or to give multiple `npub.yml` configs distinct cache locations. Honors `~/` and `$VAR` expansion like the other path settings. ([#78])
+
+### Changed
+
+- `build_path` is removed. `npub build` writes to `--out <dir>` if given, otherwise to `<cache_path>/build` (with `cache_path` defaulting to `~/.cache/npub/<repo>`). `npub serve` resolves its target the same way, substituting `--dir` for `--out`. There is no implicit `./dist` fallback any more — one of `deploy_repo` or the per-command flag must be set. `npub config` no longer prints `build_path`; the resolved path appears in `npub build`'s log line. ([#78])
+
+[#78]: https://github.com/dreikanter/npub/pull/78
+
 ## [0.2.13] - 2026-04-30
 
 ### Changed

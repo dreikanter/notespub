@@ -16,7 +16,6 @@ const DefaultConfigFile = "npub.yml"
 type Config struct {
 	NotesPath   string `yaml:"notes_path"`
 	AssetsPath  string `yaml:"assets_path"`
-	BuildPath   string `yaml:"build_path"`
 	StaticPath  string `yaml:"static_path"`
 	SiteRootURL string `yaml:"site_root_url"`
 	SiteName    string `yaml:"site_name"`
@@ -24,6 +23,8 @@ type Config struct {
 	LicenseName string `yaml:"license_name"`
 	LicenseURL  string `yaml:"license_url"`
 	Intro       string `yaml:"intro"`
+	DeployRepo  string `yaml:"deploy_repo"`
+	CachePath   string `yaml:"cache_path"`
 }
 
 // SiteRootPath returns the URL path component of SiteRootURL.
@@ -87,7 +88,6 @@ func Load(yamlPath string, flagOverrides map[string]string) (Config, error) {
 	flagMap := map[string]*string{
 		"path":         &cfg.NotesPath,
 		"assets":       &cfg.AssetsPath,
-		"out":          &cfg.BuildPath,
 		"static":       &cfg.StaticPath,
 		"url":          &cfg.SiteRootURL,
 		"site-name":    &cfg.SiteName,
@@ -106,11 +106,8 @@ func Load(yamlPath string, flagOverrides map[string]string) (Config, error) {
 	}
 	cfg.NotesPath = ExpandPath(cfg.NotesPath)
 	cfg.AssetsPath = ExpandPath(cfg.AssetsPath)
-	if cfg.BuildPath == "" {
-		cfg.BuildPath = "./dist"
-	}
-	cfg.BuildPath = ExpandPath(cfg.BuildPath)
 	cfg.StaticPath = ExpandPath(cfg.StaticPath)
+	cfg.CachePath = ExpandPath(cfg.CachePath)
 	if cfg.StaticPath == "" && cfg.NotesPath != "" {
 		cfg.StaticPath = filepath.Join(cfg.NotesPath, "static")
 	}
