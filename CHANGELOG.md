@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.14] - 2026-05-01
+
+### Added
+
+- `npub deploy` builds and publishes the site to a git remote configured via the new `deploy_repo` YAML key. `npub build` writes the rendered site to `~/.cache/npub/<repo>/build` (offline; no git or network involvement); `npub deploy` clones `deploy_repo` into `~/.cache/npub/<repo>/repo` on first use, hard-resets it to the remote default branch on subsequent runs, mirrors `build/` into it (preserving `repo/.git`), commits the diff, and pushes with `git push -u origin HEAD`. Pass `--dry-run` to commit locally without pushing. Errors at every step (missing `git`, malformed `deploy_repo`, clone failure, mismatched origin URL, missing build output, push rejection) surface git's own message rather than a bare exit code. ([#78])
+
+### Changed
+
+- `build_path` is no longer a YAML key. `npub build` resolves its output directory in this order: `--out` flag, `~/.cache/npub/<repo>/build` when `deploy_repo` is set, then `./dist`. `npub serve` follows the same fallback chain when `--dir` is not given. Existing configs with a `build_path` entry continue to load (the value is silently discarded). ([#78])
+
+[#78]: https://github.com/dreikanter/npub/pull/78
+
 ## [0.2.13] - 2026-04-30
 
 ### Changed
