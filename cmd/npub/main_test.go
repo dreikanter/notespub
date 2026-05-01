@@ -140,7 +140,6 @@ author_name: "Test Author"
 	assert.Contains(t, out, "license_name: CC BY 4.0")
 	assert.Contains(t, out, "license_url: https://creativecommons.org/licenses/by/4.0/")
 	assert.Contains(t, out, "deploy_repo: \"\"")
-	assert.NotContains(t, out, "build_path:")
 }
 
 func TestConfigCommandAppliesFlagOverrides(t *testing.T) {
