@@ -31,7 +31,12 @@
 # intro: ""
 
 # Git repository that hosts the published site. When set, `npub build`
-# writes the site to ~/.cache/npub/<repo>/build (offline) and `npub deploy`
-# bare-clones the remote into ~/.cache/npub/<repo>/git and commits the
-# build directory's contents directly via git's --git-dir + --work-tree.
+# writes the site to <cache_path>/build (offline) and `npub deploy`
+# bare-clones the remote into <cache_path>/git and commits the build
+# directory's contents directly via git's --git-dir + --work-tree.
 # deploy_repo: ""
+
+# Per-site cache directory that holds build/ and git/. Defaults to
+# ~/.cache/npub/<repo>. Override to keep cache state on a different volume
+# or to give multiple npub.yml configs distinct cache locations.
+# cache_path: ""

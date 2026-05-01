@@ -115,14 +115,12 @@ commits locally but skips the push.`,
 		}
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 
-		buildDir, err := deploy.BuildDir(cfg.DeployRepo)
+		cacheDir, err := resolveCacheDir(cfg)
 		if err != nil {
 			return err
 		}
-		gitDir, err := deploy.GitDir(cfg.DeployRepo)
-		if err != nil {
-			return err
-		}
+		buildDir := deploy.BuildDir(cacheDir)
+		gitDir := deploy.GitDir(cacheDir)
 
 		log.Printf("preparing %s", gitDir)
 		if err := deploy.Prepare(cfg.DeployRepo, gitDir, buildDir, deploy.Options{}); err != nil {
@@ -261,18 +259,32 @@ func validateNotesPath(path string) error {
 	return nil
 }
 
+// resolveCacheDir returns the per-site cache directory that contains
+// build/ and git/ subdirectories. cache_path in the YAML overrides the
+// default ~/.cache/npub/<repo>.
+func resolveCacheDir(cfg config.Config) (string, error) {
+	if strings.TrimSpace(cfg.CachePath) != "" {
+		return config.ExpandPath(cfg.CachePath), nil
+	}
+	return deploy.DefaultCacheDir(cfg.DeployRepo)
+}
+
 // resolveBuildPath returns the directory the build will write to.
 //
 // Precedence:
 //  1. --out flag (explicit override)
-//  2. deploy_repo cache (~/.cache/npub/<repo>/build)
+//  2. <cache_dir>/build when deploy_repo is set
 //  3. ./dist
 func resolveBuildPath(cmd *cobra.Command, cfg config.Config) (string, error) {
 	if f := cmd.Flags().Lookup("out"); f != nil && f.Changed {
 		return config.ExpandPath(f.Value.String()), nil
 	}
 	if strings.TrimSpace(cfg.DeployRepo) != "" {
-		return deploy.BuildDir(cfg.DeployRepo)
+		cache, err := resolveCacheDir(cfg)
+		if err != nil {
+			return "", err
+		}
+		return deploy.BuildDir(cache), nil
 	}
 	return "./dist", nil
 }

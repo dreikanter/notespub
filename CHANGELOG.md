@@ -4,11 +4,12 @@
 
 ### Added
 
-- `npub deploy` publishes the site to a git remote configured via the new `deploy_repo` YAML key. `npub build` writes the rendered site to `~/.cache/npub/<repo>/build` (offline; no git or network involvement); `npub deploy` keeps a bare clone of `deploy_repo` at `~/.cache/npub/<repo>/git` and uses `build/` as a temporary work-tree via `--git-dir` + `--work-tree`, so a single `git add -A` reconciles changed, added, and deleted files against origin's last published state. No second copy of the site is held on disk. Pass `--dry-run` to commit locally without pushing. Errors at every step (missing `git`, malformed `deploy_repo`, clone failure, mismatched origin URL, missing build output, push rejection) surface git's own message rather than a bare exit code. ([#78])
+- `npub deploy` publishes the site to a git remote configured via the new `deploy_repo` YAML key. `npub build` writes the rendered site to `<cache_path>/build` (offline; no git or network involvement); `npub deploy` keeps a bare clone of `deploy_repo` at `<cache_path>/git` and uses `build/` as a temporary work-tree via `--git-dir` + `--work-tree`, so a single `git add -A` reconciles changed, added, and deleted files against origin's last published state. No second copy of the site is held on disk. Pass `--dry-run` to commit locally without pushing. Errors at every step (missing `git`, malformed `deploy_repo`, clone failure, mismatched origin URL, missing build output, push rejection) surface git's own message rather than a bare exit code. ([#78])
+- New `cache_path` YAML key overrides the per-site cache directory. Defaults to `~/.cache/npub/<repo>`. Use it to keep cache state on a different volume or to give multiple `npub.yml` configs distinct cache locations. Honors `~/` and `$VAR` expansion like the other path settings. ([#78])
 
 ### Changed
 
-- `build_path` is no longer a YAML key. `npub build` resolves its output directory in this order: `--out` flag, `~/.cache/npub/<repo>/build` when `deploy_repo` is set, then `./dist`. `npub serve` follows the same fallback chain when `--dir` is not given. Existing configs with a `build_path` entry continue to load (the value is silently discarded). ([#78])
+- `build_path` is no longer a YAML key. `npub build` resolves its output directory in this order: `--out` flag, `<cache_path>/build` when `deploy_repo` is set, then `./dist`. `npub serve` follows the same fallback chain when `--dir` is not given. Existing configs with a `build_path` entry continue to load (the value is silently discarded). ([#78])
 
 [#78]: https://github.com/dreikanter/npub/pull/78
 

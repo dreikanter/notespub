@@ -50,11 +50,13 @@ All values can be overridden with CLI flags:
 | `license_url` | `--license-url` | https://creativecommons.org/licenses/by/4.0/ | |
 | `intro` | | | |
 | `deploy_repo` | | | For `deploy` |
+| `cache_path` | | `~/.cache/npub/<repo>` | |
 
 The build output directory is not a config option. `npub build` writes to
-`~/.cache/npub/<repo>/build` when `deploy_repo` is set, otherwise to
-`./dist`. Pass `--out <dir>` to `npub build` to override. `build` never
-talks to the deploy_repo remote — all git operations happen in `deploy`.
+`<cache_path>/build` when `deploy_repo` is set (where `cache_path` defaults
+to `~/.cache/npub/<repo>`), otherwise to `./dist`. Pass `--out <dir>` to
+`npub build` to override. `build` never talks to the deploy_repo remote —
+all git operations happen in `deploy`.
 
 Priority: CLI flags > YAML config.
 

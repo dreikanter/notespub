@@ -25,9 +25,10 @@ func CacheRoot() (string, error) {
 	return filepath.Join(home, ".cache", "npub"), nil
 }
 
-// CacheDir returns the per-repo cache parent for repoURL,
-// ~/.cache/npub/<repo>. BuildDir and GitDir live under it.
-func CacheDir(repoURL string) (string, error) {
+// DefaultCacheDir returns the conventional per-repo cache directory for
+// repoURL, ~/.cache/npub/<repo>. Callers may pass any directory to BuildDir
+// and GitDir; this is just the default when no override is configured.
+func DefaultCacheDir(repoURL string) (string, error) {
 	if strings.TrimSpace(repoURL) == "" {
 		return "", errors.New("deploy_repo is empty")
 	}
@@ -42,26 +43,17 @@ func CacheDir(repoURL string) (string, error) {
 	return filepath.Join(root, slug), nil
 }
 
-// BuildDir returns the directory where `npub build` writes the rendered
-// site for repoURL: ~/.cache/npub/<repo>/build. It is a plain directory,
-// never a git working copy.
-func BuildDir(repoURL string) (string, error) {
-	dir, err := CacheDir(repoURL)
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(dir, "build"), nil
+// BuildDir returns the build subdirectory of cacheDir, where `npub build`
+// writes the rendered site. cacheDir is the per-site cache directory
+// resolved by the caller.
+func BuildDir(cacheDir string) string {
+	return filepath.Join(cacheDir, "build")
 }
 
-// GitDir returns the bare git directory for repoURL:
-// ~/.cache/npub/<repo>/git. `npub deploy` clones deploy_repo here on first
-// use and treats BuildDir as a temporary work-tree when committing.
-func GitDir(repoURL string) (string, error) {
-	dir, err := CacheDir(repoURL)
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(dir, "git"), nil
+// GitDir returns the bare git subdirectory of cacheDir, where `npub deploy`
+// clones deploy_repo on first use.
+func GitDir(cacheDir string) string {
+	return filepath.Join(cacheDir, "git")
 }
 
 // RepoSlug derives a directory name from a git repository URL. It strips a

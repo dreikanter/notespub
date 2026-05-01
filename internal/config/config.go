@@ -25,6 +25,7 @@ type Config struct {
 	LicenseURL  string `yaml:"license_url"`
 	Intro       string `yaml:"intro"`
 	DeployRepo  string `yaml:"deploy_repo"`
+	CachePath   string `yaml:"cache_path"`
 }
 
 // SiteRootPath returns the URL path component of SiteRootURL.
@@ -111,6 +112,7 @@ func Load(yamlPath string, flagOverrides map[string]string) (Config, error) {
 	// file is discarded here.
 	cfg.BuildPath = ""
 	cfg.StaticPath = ExpandPath(cfg.StaticPath)
+	cfg.CachePath = ExpandPath(cfg.CachePath)
 	if cfg.StaticPath == "" && cfg.NotesPath != "" {
 		cfg.StaticPath = filepath.Join(cfg.NotesPath, "static")
 	}

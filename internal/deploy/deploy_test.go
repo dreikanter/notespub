@@ -28,13 +28,15 @@ func TestRepoSlug(t *testing.T) {
 	}
 }
 
-func TestCacheLayout(t *testing.T) {
-	build, err := BuildDir("https://github.com/user/site.git")
+func TestDefaultCacheDir(t *testing.T) {
+	dir, err := DefaultCacheDir("https://github.com/user/site.git")
 	require.NoError(t, err)
-	gitDir, err := GitDir("https://github.com/user/site.git")
-	require.NoError(t, err)
-	assert.Equal(t, filepath.Dir(build), filepath.Dir(gitDir), "build and git share a parent")
-	assert.Equal(t, "build", filepath.Base(build))
-	assert.Equal(t, "git", filepath.Base(gitDir))
-	assert.Equal(t, "site", filepath.Base(filepath.Dir(build)))
+	assert.Equal(t, "site", filepath.Base(dir))
+	assert.Equal(t, "npub", filepath.Base(filepath.Dir(dir)))
+}
+
+func TestBuildAndGitDir(t *testing.T) {
+	cache := "/tmp/whatever"
+	assert.Equal(t, "/tmp/whatever/build", BuildDir(cache))
+	assert.Equal(t, "/tmp/whatever/git", GitDir(cache))
 }
