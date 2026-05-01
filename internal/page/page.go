@@ -30,11 +30,11 @@ type Attachment struct {
 }
 
 func (p NotePage) LocalPath() string {
-	return path.Join(p.UID, p.Slug, "index.html")
+	return path.Join(p.Slug, "index.html")
 }
 
 func (p NotePage) PublicPath() string {
-	return path.Join(p.UID, p.Slug)
+	return p.Slug
 }
 
 func (p NotePage) URL() string {
@@ -100,12 +100,12 @@ func AllTags(pages []NotePage) []string {
 }
 
 type RedirectPage struct {
-	UID        string
+	FromPath   string
 	RedirectTo string
 }
 
 func (p RedirectPage) LocalPath() string {
-	return path.Join(p.UID, "index.html")
+	return path.Join(p.FromPath, "index.html")
 }
 
 type TagPage struct {

@@ -1,6 +1,8 @@
 package build
 
 import (
+	"bytes"
+	"log"
 	"os"
 	"path/filepath"
 	"testing"
@@ -8,6 +10,7 @@ import (
 
 	"github.com/dreikanter/notesctl/note"
 	"github.com/dreikanter/npub/internal/config"
+	"github.com/dreikanter/npub/internal/page"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -105,17 +108,22 @@ func TestBuildPublicNote(t *testing.T) {
 	}
 	require.NoError(t, Build(store, cfg, assets))
 
-	notePath := filepath.Join(buildDir, "20230130_3961", "my-test-note", "index.html")
+	notePath := filepath.Join(buildDir, "my-test-note", "index.html")
 	data, err := os.ReadFile(notePath)
 	require.NoError(t, err)
 	html := string(data)
 	assert.Contains(t, html, "My Test Note")
 	assert.Contains(t, html, "<strong>world</strong>")
 
-	redirectPath := filepath.Join(buildDir, "20230130_3961", "index.html")
-	rdata, err := os.ReadFile(redirectPath)
+	uidRedirectPath := filepath.Join(buildDir, "20230130_3961", "index.html")
+	rdata, err := os.ReadFile(uidRedirectPath)
 	require.NoError(t, err)
-	assert.Contains(t, string(rdata), "my-test-note")
+	assert.Contains(t, string(rdata), "/my-test-note")
+
+	legacyRedirectPath := filepath.Join(buildDir, "20230130_3961", "my-test-note", "index.html")
+	ldata, err := os.ReadFile(legacyRedirectPath)
+	require.NoError(t, err)
+	assert.Contains(t, string(ldata), "/my-test-note")
 
 	indexPath := filepath.Join(buildDir, "index.html")
 	idata, err := os.ReadFile(indexPath)
@@ -208,9 +216,9 @@ func TestBuildNoteLinkResolution(t *testing.T) {
 	}
 	require.NoError(t, Build(store, cfg, assets))
 
-	data, err := os.ReadFile(filepath.Join(buildDir, "20230130_3961", "first-note", "index.html"))
+	data, err := os.ReadFile(filepath.Join(buildDir, "first-note", "index.html"))
 	require.NoError(t, err)
-	assert.Contains(t, string(data), `href="/20230131_3962/second-note"`)
+	assert.Contains(t, string(data), `href="/second-note"`)
 }
 
 func TestChooseSlug(t *testing.T) {
@@ -240,6 +248,30 @@ func TestChooseSlug(t *testing.T) {
 			assert.Equal(t, tt.want, chooseSlug(tt.entry))
 		})
 	}
+}
+
+func TestWarnDuplicateSlugs(t *testing.T) {
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	log.SetFlags(0)
+	t.Cleanup(func() {
+		log.SetOutput(os.Stderr)
+		log.SetFlags(log.LstdFlags)
+	})
+
+	pages := []page.NotePage{
+		{UID: "20230130_3961", Slug: "hello-world"},
+		{UID: "20230201_3962", Slug: "unique"},
+		{UID: "20230205_3963", Slug: "hello-world"},
+	}
+
+	warnDuplicateSlugs(pages)
+
+	out := buf.String()
+	assert.Contains(t, out, `duplicate slug "hello-world"`)
+	assert.Contains(t, out, "20230130_3961")
+	assert.Contains(t, out, "20230205_3963")
+	assert.NotContains(t, out, "unique")
 }
 
 func TestTitleOrUID(t *testing.T) {

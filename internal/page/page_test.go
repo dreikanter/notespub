@@ -13,7 +13,7 @@ func TestNotePageLocalPath(t *testing.T) {
 		Slug: "rails-devise-manual-password-change",
 	}
 
-	assert.Equal(t, "20230130_3961/rails-devise-manual-password-change/index.html", p.LocalPath())
+	assert.Equal(t, "rails-devise-manual-password-change/index.html", p.LocalPath())
 }
 
 func TestNotePageURL(t *testing.T) {
@@ -23,7 +23,7 @@ func TestNotePageURL(t *testing.T) {
 		SiteRootURL: "https://notes.musayev.com",
 	}
 
-	assert.Equal(t, "https://notes.musayev.com/20230130_3961/rails-devise-manual-password-change", p.URL())
+	assert.Equal(t, "https://notes.musayev.com/rails-devise-manual-password-change", p.URL())
 }
 
 func TestNotePagePublicPath(t *testing.T) {
@@ -32,15 +32,23 @@ func TestNotePagePublicPath(t *testing.T) {
 		Slug: "rails-devise-manual-password-change",
 	}
 
-	assert.Equal(t, "20230130_3961/rails-devise-manual-password-change", p.PublicPath())
+	assert.Equal(t, "rails-devise-manual-password-change", p.PublicPath())
 }
 
 func TestRedirectPageLocalPath(t *testing.T) {
 	p := RedirectPage{
-		UID: "20230130_3961",
+		FromPath: "20230130_3961",
 	}
 
 	assert.Equal(t, "20230130_3961/index.html", p.LocalPath())
+}
+
+func TestRedirectPageLocalPathNested(t *testing.T) {
+	p := RedirectPage{
+		FromPath: "20230130_3961/old-slug",
+	}
+
+	assert.Equal(t, "20230130_3961/old-slug/index.html", p.LocalPath())
 }
 
 func TestTagPageLocalPath(t *testing.T) {

@@ -26,13 +26,13 @@ func TestRenderFencedCode(t *testing.T) {
 
 func TestRenderNoteLink(t *testing.T) {
 	noteIndex := map[int]string{
-		8823: "20260106_8823/some-slug",
+		8823: "some-slug",
 	}
 	md := "See [this note](8823)\n"
 	html, err := Render(md, noteIndex, nil)
 	require.NoError(t, err)
 
-	assert.Contains(t, string(html), `href="/20260106_8823/some-slug"`)
+	assert.Contains(t, string(html), `href="/some-slug"`)
 }
 
 func TestRenderNoteLinkUnresolved(t *testing.T) {
