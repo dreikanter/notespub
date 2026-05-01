@@ -10,11 +10,13 @@ import (
 	"path/filepath"
 	"runtime/debug"
 	"strconv"
+	"time"
 
 	"github.com/dreikanter/notesctl/note"
 	"github.com/dreikanter/npub"
 	"github.com/dreikanter/npub/internal/build"
 	"github.com/dreikanter/npub/internal/config"
+	"github.com/dreikanter/npub/internal/deploy"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -73,6 +75,66 @@ override the corresponding YAML keys.`,
 			return fmt.Errorf("build failed: %w", err)
 		}
 		log.Println("build complete")
+		return nil
+	},
+}
+
+var deployCmd = &cobra.Command{
+	Use:   "deploy",
+	Short: "Build and push the site to a git remote",
+	Long: `Build the site into a local working copy of deploy_repo and push it.
+
+The working copy lives in ~/.cache/npub/<repo>; npub clones into it on first
+use and hard-resets it to the remote default branch on subsequent runs. With
+--dry-run, npub still clones, fetches, and builds, but skips the push.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cfgPath, _ := cmd.Flags().GetString("config")
+		cfg, _, err := loadConfig(cmd, cfgPath)
+		if err != nil {
+			return err
+		}
+		if err := validateNotesPath(cfg.NotesPath); err != nil {
+			return err
+		}
+		if cfg.DeployRepo == "" {
+			return fmt.Errorf("deploy_repo is not set: configure it in npub.yml")
+		}
+		dryRun, _ := cmd.Flags().GetBool("dry-run")
+
+		workDir, err := deploy.WorkDir(cfg.DeployRepo)
+		if err != nil {
+			return err
+		}
+		log.Printf("preparing %s", workDir)
+		if err := deploy.Prepare(cfg.DeployRepo, workDir, deploy.Options{}); err != nil {
+			return fmt.Errorf("preparing working copy: %w", err)
+		}
+
+		cfg.BuildPath = workDir
+		log.Printf("building site from %s to %s", cfg.NotesPath, cfg.BuildPath)
+		store := note.NewOSStore(cfg.NotesPath)
+		if err := build.Build(store, cfg, npub.Assets); err != nil {
+			return fmt.Errorf("build failed: %w", err)
+		}
+
+		message := fmt.Sprintf("Deploy %s", time.Now().UTC().Format(time.RFC3339))
+		committed, err := deploy.Commit(workDir, message, deploy.Options{})
+		if err != nil {
+			return fmt.Errorf("commit failed: %w", err)
+		}
+		if !committed {
+			log.Println("no changes to deploy")
+			return nil
+		}
+		if dryRun {
+			log.Println("dry-run: skipping push")
+			return nil
+		}
+		log.Println("pushing")
+		if err := deploy.Push(workDir, deploy.Options{}); err != nil {
+			return fmt.Errorf("push failed: %w", err)
+		}
+		log.Println("deploy complete")
 		return nil
 	},
 }
@@ -278,6 +340,8 @@ func init() {
 
 	addConfigFlags(buildCmd)
 	addConfigFlags(configCmd)
+	addConfigFlags(deployCmd)
+	deployCmd.Flags().Bool("dry-run", false, "build and commit but skip git push")
 
 	serveCmd.Flags().String("dir", "", "directory to serve (default: build_path from config, or ./dist)")
 	serveCmd.Flags().String("host", "localhost", "interface to bind")
@@ -286,6 +350,7 @@ func init() {
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(buildCmd)
 	rootCmd.AddCommand(configCmd)
+	rootCmd.AddCommand(deployCmd)
 	rootCmd.AddCommand(serveCmd)
 }
 

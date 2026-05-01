@@ -24,6 +24,7 @@ type Config struct {
 	LicenseName string `yaml:"license_name"`
 	LicenseURL  string `yaml:"license_url"`
 	Intro       string `yaml:"intro"`
+	DeployRepo  string `yaml:"deploy_repo"`
 }
 
 // SiteRootPath returns the URL path component of SiteRootURL.

@@ -32,3 +32,8 @@
 
 # Optional short paragraph shown above the posts list on the index page.
 # intro: ""
+
+# Git repository that hosts the published site. Required for `npub deploy`.
+# The deploy command clones into ~/.cache/npub/<repo>, builds the site there,
+# commits, and pushes.
+# deploy_repo: ""

@@ -50,6 +50,7 @@ All values can be overridden with CLI flags:
 | `license_name` | `--license-name` | CC BY 4.0 | |
 | `license_url` | `--license-url` | https://creativecommons.org/licenses/by/4.0/ | |
 | `intro` | | | |
+| `deploy_repo` | | | For `deploy` |
 
 Priority: CLI flags > YAML config.
 
@@ -106,6 +107,14 @@ npub serve
 ```
 
 The `serve` command starts a local HTTP server on `localhost:4000` (override with `--host` and `--port`). It serves the `build_path` from your config (or `./dist` if no config is found). Override with `--dir`.
+
+Deploy to a git remote:
+
+```sh
+npub deploy
+```
+
+`npub deploy` builds the site directly into a local working copy of `deploy_repo`, then commits and pushes the result. The working copy is kept in `~/.cache/npub/<repo>`; the first run clones, subsequent runs fetch and hard-reset to the remote default branch before building. Use `--dry-run` to build and commit locally without pushing.
 
 ## Notes format
 
