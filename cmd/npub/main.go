@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime/debug"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/dreikanter/notesctl/note"
@@ -96,8 +97,8 @@ use and hard-resets it to the remote default branch on subsequent runs. With
 		if err := validateNotesPath(cfg.NotesPath); err != nil {
 			return err
 		}
-		if cfg.DeployRepo == "" {
-			return fmt.Errorf("deploy_repo is not set: configure it in npub.yml")
+		if strings.TrimSpace(cfg.DeployRepo) == "" {
+			return fmt.Errorf("deploy_repo is not set; add it to %s", config.DefaultConfigFile)
 		}
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 
@@ -107,20 +108,20 @@ use and hard-resets it to the remote default branch on subsequent runs. With
 		}
 		log.Printf("preparing %s", workDir)
 		if err := deploy.Prepare(cfg.DeployRepo, workDir, deploy.Options{}); err != nil {
-			return fmt.Errorf("preparing working copy: %w", err)
+			return err
 		}
 
 		cfg.BuildPath = workDir
 		log.Printf("building site from %s to %s", cfg.NotesPath, cfg.BuildPath)
 		store := note.NewOSStore(cfg.NotesPath)
 		if err := build.Build(store, cfg, npub.Assets); err != nil {
-			return fmt.Errorf("build failed: %w", err)
+			return err
 		}
 
 		message := fmt.Sprintf("Deploy %s", time.Now().UTC().Format(time.RFC3339))
 		committed, err := deploy.Commit(workDir, message, deploy.Options{})
 		if err != nil {
-			return fmt.Errorf("commit failed: %w", err)
+			return err
 		}
 		if !committed {
 			log.Println("no changes to deploy")
@@ -132,7 +133,7 @@ use and hard-resets it to the remote default branch on subsequent runs. With
 		}
 		log.Println("pushing")
 		if err := deploy.Push(workDir, deploy.Options{}); err != nil {
-			return fmt.Errorf("push failed: %w", err)
+			return err
 		}
 		log.Println("deploy complete")
 		return nil
