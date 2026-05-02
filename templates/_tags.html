@@ -7,3 +7,13 @@
   {{end}}
 </ul>
 {{end}}
+
+{{define "mobile_tags"}}
+{{if .}}
+  <div class="not-prose sm:hidden mb-6 flex flex-wrap gap-2">
+    {{range .}}
+      <a href="/tags/{{.}}" class="text-sm no-underline rounded-md bg-slate-100 px-2 py-1 text-slate-600 hover:text-slate-800">#{{.}}</a>
+    {{end}}
+  </div>
+{{end}}
+{{end}}
