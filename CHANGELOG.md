@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.15]
+
+### Changed
+
+- Re-point the `notes` library dependency from `github.com/dreikanter/notesctl` to `github.com/dreikanter/notes` to follow the upstream rename. No behavior change ([#81]).
+
+[#81]: https://github.com/dreikanter/npub/pull/81
+
 ## [0.2.14] - 2026-05-01
 
 ### Added

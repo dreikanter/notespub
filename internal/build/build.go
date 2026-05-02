@@ -17,7 +17,7 @@ import (
 
 	texttemplate "text/template"
 
-	"github.com/dreikanter/notesctl/note"
+	"github.com/dreikanter/notes/note"
 	"github.com/dreikanter/npub/internal/config"
 	"github.com/dreikanter/npub/internal/images"
 	"github.com/dreikanter/npub/internal/page"

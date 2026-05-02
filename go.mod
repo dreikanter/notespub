@@ -4,8 +4,9 @@ go 1.25.9
 
 require (
 	github.com/alecthomas/chroma/v2 v2.23.1
-	github.com/dreikanter/notesctl v0.3.26
+	github.com/dreikanter/notes v0.3.30-0.20260502093346-79c50e4c31e1
 	github.com/spf13/cobra v1.10.2
+	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
 	github.com/yuin/goldmark v1.8.2
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20230729083705-37449abec8cc
@@ -18,7 +19,6 @@ require (
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/spf13/pflag v1.0.10 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.43.0 // indirect
 )
