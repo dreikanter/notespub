@@ -47,6 +47,8 @@ type configData struct {
 	StyleCSS       template.CSS
 	HighlightCSS   template.CSS
 	FaviconDataURI template.URL
+	SunSVG         template.HTML
+	MoonSVG        template.HTML
 }
 
 // pageData holds metadata for the layout template.
@@ -196,6 +198,8 @@ type Assets struct {
 	Templates  fs.FS
 	StyleCSS   []byte
 	FaviconSVG []byte
+	SunSVG     []byte
+	MoonSVG    []byte
 	Generator  string
 }
 
@@ -361,6 +365,8 @@ func Build(store note.Store, cfg config.Config, buildPath string, assets Assets)
 		StyleCSS:       template.CSS(assets.StyleCSS),
 		HighlightCSS:   template.CSS(render.HighlightCSS()),
 		FaviconDataURI: faviconDataURI(assets.FaviconSVG),
+		SunSVG:         template.HTML(assets.SunSVG),
+		MoonSVG:        template.HTML(assets.MoonSVG),
 	}
 
 	// 6. Write note pages and redirects.
