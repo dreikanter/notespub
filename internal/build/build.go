@@ -196,6 +196,84 @@ type Assets struct {
 	FaviconSVG []byte
 }
 
+// RemoveStaleTempBuildDirs removes temporary build directories left by failed
+// or interrupted atomic builds next to buildPath.
+func RemoveStaleTempBuildDirs(buildPath string) error {
+	parent := filepath.Dir(buildPath)
+	prefix := filepath.Base(buildPath) + ".tmp-"
+
+	entries, err := os.ReadDir(parent)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return fmt.Errorf("reading build parent directory: %w", err)
+	}
+	for _, entry := range entries {
+		if !entry.IsDir() || !strings.HasPrefix(entry.Name(), prefix) {
+			continue
+		}
+		path := filepath.Join(parent, entry.Name())
+		if err := os.RemoveAll(path); err != nil {
+			return fmt.Errorf("removing stale temporary build directory %s: %w", path, err)
+		}
+	}
+	return nil
+}
+
+// AtomicBuild renders the site into a temporary directory next to buildPath,
+// then replaces buildPath only after rendering succeeds. If rendering fails,
+// the previous buildPath contents are left untouched.
+func AtomicBuild(store note.Store, cfg config.Config, buildPath string, assets Assets) error {
+	parent := filepath.Dir(buildPath)
+	prefix := filepath.Base(buildPath) + ".tmp-"
+	if err := os.MkdirAll(parent, 0o755); err != nil {
+		return fmt.Errorf("creating build parent directory: %w", err)
+	}
+	if err := RemoveStaleTempBuildDirs(buildPath); err != nil {
+		return err
+	}
+
+	tmpPath, err := os.MkdirTemp(parent, prefix)
+	if err != nil {
+		return fmt.Errorf("creating temporary build directory: %w", err)
+	}
+	cleanupTmp := true
+	defer func() {
+		if cleanupTmp {
+			_ = os.RemoveAll(tmpPath)
+		}
+	}()
+
+	if err := Build(store, cfg, tmpPath, assets); err != nil {
+		return err
+	}
+
+	oldPath := filepath.Join(parent, filepath.Base(buildPath)+".old-"+strings.TrimPrefix(filepath.Base(tmpPath), prefix))
+	movedOld := false
+	if err := os.Rename(buildPath, oldPath); err != nil {
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("moving previous build directory aside: %w", err)
+		}
+	} else {
+		movedOld = true
+	}
+
+	if err := os.Rename(tmpPath, buildPath); err != nil {
+		if movedOld {
+			_ = os.Rename(oldPath, buildPath)
+		}
+		return fmt.Errorf("replacing build directory: %w", err)
+	}
+	cleanupTmp = false
+	if movedOld {
+		if err := os.RemoveAll(oldPath); err != nil {
+			return fmt.Errorf("removing previous build directory: %w", err)
+		}
+	}
+	return nil
+}
+
 // Build generates the static site from notes into buildPath. buildPath is
 // the directory the rendered files are written to; cfg supplies everything
 // else (notes location, site metadata, etc).
