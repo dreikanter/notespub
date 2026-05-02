@@ -4,7 +4,7 @@ go 1.25.9
 
 require (
 	github.com/alecthomas/chroma/v2 v2.23.1
-	github.com/dreikanter/notes v0.3.30-0.20260502093346-79c50e4c31e1
+	github.com/dreikanter/notes v0.3.30
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
