@@ -221,8 +221,9 @@ cache_path: "`+cacheDir+`"
 	assert.NoDirExists(t, deploy.BuildDir(cacheDir))
 }
 
-func TestClearCommandRejectsPositionalPathAndHasNoOutFlag(t *testing.T) {
+func TestClearCommandRejectsPositionalPathAndBuildHasNoOutFlag(t *testing.T) {
 	assert.Nil(t, clearCmd.Flags().Lookup("out"))
+	assert.Nil(t, buildCmd.Flags().Lookup("out"))
 
 	var buf bytes.Buffer
 	rootCmd.SetOut(&buf)

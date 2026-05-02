@@ -54,9 +54,9 @@ All values can be overridden with CLI flags:
 
 The build output directory is not a config option. `npub build` writes to
 `<cache_path>/build` (where `cache_path` defaults to `~/.cache/npub/<repo>`).
-Pass `--out <dir>` to override. Either `deploy_repo` or `--out` must be set;
-there is no implicit `./dist`. `build` never talks to the deploy_repo
-remote — all git operations happen in `deploy`.
+Either `deploy_repo` or `cache_path` must be set; there is no implicit `./dist`.
+`build` never talks to the deploy_repo remote — all git operations happen in
+`deploy`.
 
 Priority: CLI flags > YAML config.
 
@@ -131,7 +131,7 @@ Clear the managed build output:
 npub clear
 ```
 
-`npub clear` removes only the managed `<cache_path>/build` directory. It does not accept arbitrary paths or `--out`. Non-empty build output must contain npub's `.npub-build` marker, which `npub build` writes as a deletion guardrail.
+`npub clear` removes only the managed `<cache_path>/build` directory. It does not accept arbitrary paths. Non-empty build output must contain npub's `.npub-build` marker, which `npub build` writes as a deletion guardrail.
 
 ## Notes format
 

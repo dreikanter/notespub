@@ -62,11 +62,11 @@ var buildCmd = &cobra.Command{
 	Long: `Read notes from notes_path, render to HTML, and write the site files.
 
 Output directory resolution:
-  --out <dir>              explicit override
   deploy_repo (in YAML)    <cache_path>/build (cache_path defaults to
                            ~/.cache/npub/<repo>)
+  cache_path (in YAML)     <cache_path>/build
 
-One of the two must be configured.
+One of deploy_repo or cache_path must be configured.
 
 build runs offline: it never talks to the deploy_repo remote. All git
 operations happen in deploy.`,
@@ -80,21 +80,16 @@ operations happen in deploy.`,
 			return err
 		}
 
-		buildPath, err := resolveBuildPath(cmd, cfg)
+		cacheDir, err := resolveCacheDir(cfg)
 		if err != nil {
 			return err
 		}
-		if f := cmd.Flags().Lookup("out"); f == nil || !f.Changed {
-			cacheDir, err := resolveCacheDir(cfg)
-			if err != nil {
-				return err
-			}
-			lock, err := deploy.AcquireLock(cacheDir)
-			if err != nil {
-				return err
-			}
-			defer func() { _ = lock.Release() }()
+		buildPath := deploy.BuildDir(cacheDir)
+		lock, err := deploy.AcquireLock(cacheDir)
+		if err != nil {
+			return err
 		}
+		defer func() { _ = lock.Release() }()
 
 		log.Printf("building site from %s to %s", cfg.NotesPath, buildPath)
 		store := note.NewOSStore(cfg.NotesPath)
@@ -175,8 +170,8 @@ var clearCmd = &cobra.Command{
 	Long: `Clear the managed build output directory at <cache_path>/build.
 
 clear only operates on npub's managed cache layout. It does not accept an
-arbitrary path or --out override. The build directory must either be empty or
-contain npub's ownership marker.`,
+arbitrary path override. The build directory must either be empty or contain
+npub's ownership marker.`,
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfgPath, _ := cmd.Flags().GetString("config")
@@ -278,11 +273,11 @@ set in the config for the implicit path to resolve.`,
 			if err != nil {
 				return err
 			}
-			resolved, rerr := resolveBuildPath(cmd, cfg)
+			cacheDir, rerr := resolveCacheDir(cfg)
 			if rerr != nil {
 				return rerr
 			}
-			dir = resolved
+			dir = deploy.BuildDir(cacheDir)
 		}
 		dir = config.ExpandPath(dir)
 		info, err := os.Stat(dir)
@@ -333,30 +328,10 @@ func resolveCacheDir(cfg config.Config) (string, error) {
 	if strings.TrimSpace(cfg.CachePath) != "" {
 		return config.ExpandPath(cfg.CachePath), nil
 	}
-	return deploy.DefaultCacheDir(cfg.DeployRepo)
-}
-
-// resolveBuildPath returns the directory the build will write to or the
-// directory serve will read from. It honors a caller-provided --out flag
-// first, then falls back to <cache_path>/build when deploy_repo is set.
-// If neither is configured, the caller gets a clear error rather than a
-// surprise relative path.
-func resolveBuildPath(cmd *cobra.Command, cfg config.Config) (string, error) {
-	if f := cmd.Flags().Lookup("out"); f != nil && f.Changed {
-		return config.ExpandPath(f.Value.String()), nil
-	}
 	if strings.TrimSpace(cfg.DeployRepo) == "" {
-		flag := "--out"
-		if cmd.Name() == "serve" {
-			flag = "--dir"
-		}
-		return "", fmt.Errorf("deploy_repo is not set; configure it in %s or pass %s", config.DefaultConfigFile, flag)
+		return "", fmt.Errorf("deploy_repo or cache_path must be set in %s", config.DefaultConfigFile)
 	}
-	cache, err := resolveCacheDir(cfg)
-	if err != nil {
-		return "", err
-	}
-	return deploy.BuildDir(cache), nil
+	return deploy.DefaultCacheDir(cfg.DeployRepo)
 }
 
 func initConfig(path string) (string, error) {
@@ -590,8 +565,6 @@ func init() {
 
 	addConfigFlags(buildCmd)
 	addConfigFlags(configCmd)
-	buildCmd.Flags().String("out", "", "output directory (overrides the deploy_repo cache build path)")
-	configCmd.Flags().String("out", "", "preview build path override")
 	deployCmd.Flags().Bool("dry-run", false, "commit locally but skip git push")
 	clearCmd.Flags().Bool("dry-run", false, "print the managed build directory without removing it")
 
