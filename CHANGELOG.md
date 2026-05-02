@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- Adopt an Unreleased-first changelog and release-PR versioning workflow so multiple PRs can be bundled into one release ([#83]).
+
+[#83]: https://github.com/dreikanter/npub/pull/83
+
 ## [0.2.16]
 
 ### Changed
