@@ -2,13 +2,15 @@
 
 ## [Unreleased]
 
+## [0.2.18] - 2026-05-02
+
 ### Added
 
-- Add a dark theme with a navbar toggle that persists in localStorage, paired with the `tokyonight-night` Chroma syntax-highlighting theme.
+- Add a dark theme with a navbar toggle that persists in localStorage, paired with the `tokyonight-night` Chroma syntax-highlighting theme ([#93]).
 
 ### Changed
 
-- Hide the tags sidebar on mobile, show tags as chips on index/tag pages, highlight the current tag on tag pages, and tighten mobile list spacing while preserving list markers on wider screens.
+- Hide the tags sidebar on mobile, show tags as chips on index/tag pages, highlight the current tag on tag pages, and tighten mobile list spacing while preserving list markers on wider screens ([#90]).
 
 ## [0.2.17] - 2026-05-02
 
@@ -28,6 +30,8 @@
 - Make `npub build` atomic by rendering into a temporary directory before replacing `<cache_path>/build`, leaving the previous successful build intact if rendering fails ([#88]).
 - Fail fast when another `npub deploy` is already using the same cache directory, avoiding concurrent git index mutations ([#84]).
 
+[#93]: https://github.com/dreikanter/npub/pull/93
+[#90]: https://github.com/dreikanter/npub/pull/90
 [#88]: https://github.com/dreikanter/npub/pull/88
 [#87]: https://github.com/dreikanter/npub/pull/87
 [#86]: https://github.com/dreikanter/npub/pull/86
