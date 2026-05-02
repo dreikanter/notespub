@@ -131,7 +131,7 @@ Clear the managed build output:
 npub clear
 ```
 
-`npub clear` removes only the managed `<cache_path>/build` directory. It does not accept arbitrary paths. Non-empty build output must contain npub's `.npub-build` marker, which `npub build` writes as a deletion guardrail.
+`npub clear` removes only the managed `<cache_path>/build` directory. It does not accept arbitrary paths. Non-empty build output must contain npub's `.npub-build` marker, which `npub build` writes as a deletion guardrail. Use `--dry-run` to validate the target and marker without removing anything.
 
 ## Notes format
 

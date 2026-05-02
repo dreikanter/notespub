@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 )
 
-const cacheLockFile = ".deploy.lock"
+const cacheLockFile = ".npub-cache.lock"
 
 var errLockHeld = errors.New("cache lock already held")
 

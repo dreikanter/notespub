@@ -190,7 +190,15 @@ npub's ownership marker.`,
 		}
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 		if dryRun {
-			_, err := fmt.Fprintf(cmd.OutOrStdout(), "would clear %s\n", buildDir)
+			canClear, err := checkClearableBuildDir(buildDir)
+			if err != nil {
+				return err
+			}
+			if !canClear {
+				_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s does not exist\n", buildDir)
+				return err
+			}
+			_, err = fmt.Fprintf(cmd.OutOrStdout(), "would clear %s\n", buildDir)
 			return err
 		}
 
@@ -200,6 +208,9 @@ npub's ownership marker.`,
 		}
 		defer func() { _ = lock.Release() }()
 
+		if err := validateClearTarget(buildDir, cacheDir, cfg); err != nil {
+			return err
+		}
 		cleared, err := clearBuildDir(buildDir)
 		if err != nil {
 			return err
@@ -432,6 +443,17 @@ func loadConfigForClear(cmd *cobra.Command, cfgPath string) (config.Config, erro
 }
 
 func clearBuildDir(buildDir string) (bool, error) {
+	canClear, err := checkClearableBuildDir(buildDir)
+	if err != nil || !canClear {
+		return canClear, err
+	}
+	if err := os.RemoveAll(buildDir); err != nil {
+		return false, fmt.Errorf("clearing %s: %w", buildDir, err)
+	}
+	return true, nil
+}
+
+func checkClearableBuildDir(buildDir string) (bool, error) {
 	info, err := os.Stat(buildDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -453,9 +475,6 @@ func clearBuildDir(buildDir string) (bool, error) {
 			}
 			return false, fmt.Errorf("checking build marker: %w", err)
 		}
-	}
-	if err := os.RemoveAll(buildDir); err != nil {
-		return false, fmt.Errorf("clearing %s: %w", buildDir, err)
 	}
 	return true, nil
 }
@@ -485,20 +504,30 @@ func validateClearTarget(buildDir, cacheDir string, cfg config.Config) error {
 		return err
 	}
 
-	important := map[string]string{
-		"cache_path":  cacheDir,
-		"git dir":     deploy.GitDir(cacheDir),
-		"notes_path":  cfg.NotesPath,
-		"assets_path": cfg.AssetsPath,
-		"static_path": cfg.StaticPath,
+	important := []struct {
+		name string
+		path string
+	}{
+		{name: "cache_path", path: cacheDir},
+		{name: "deploy git directory", path: deploy.GitDir(cacheDir)},
+		{name: "notes_path", path: cfg.NotesPath},
+		{name: "assets_path", path: cfg.AssetsPath},
+		{name: "static_path", path: cfg.StaticPath},
 	}
 	if home, err := os.UserHomeDir(); err == nil {
-		important["home directory"] = home
+		important = append(important, struct {
+			name string
+			path string
+		}{name: "home directory", path: home})
 	}
 	if cwd, err := os.Getwd(); err == nil {
-		important["current working directory"] = cwd
+		important = append(important, struct {
+			name string
+			path string
+		}{name: "current working directory", path: cwd})
 	}
-	for name, path := range important {
+	for _, entry := range important {
+		name, path := entry.name, entry.path
 		if path == "" {
 			continue
 		}

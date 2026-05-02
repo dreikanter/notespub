@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/dreikanter/npub/internal/build"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -40,7 +41,7 @@ func TestBuildGitAndLockDir(t *testing.T) {
 	cache := "/tmp/whatever"
 	assert.Equal(t, "/tmp/whatever/build", BuildDir(cache))
 	assert.Equal(t, "/tmp/whatever/git", GitDir(cache))
-	assert.Equal(t, "/tmp/whatever/.deploy.lock", LockPath(cache))
+	assert.Equal(t, "/tmp/whatever/.npub-cache.lock", LockPath(cache))
 }
 
 func TestAcquireLockRejectsConcurrentUse(t *testing.T) {
@@ -64,12 +65,12 @@ func TestAcquireLockRejectsConcurrentUse(t *testing.T) {
 func TestEnsureGitExcludeAddsPatternOnce(t *testing.T) {
 	gitDir := t.TempDir()
 
-	require.NoError(t, ensureGitExclude(gitDir, buildMarkerName))
-	require.NoError(t, ensureGitExclude(gitDir, buildMarkerName))
+	require.NoError(t, ensureGitExclude(gitDir, build.BuildMarkerName))
+	require.NoError(t, ensureGitExclude(gitDir, build.BuildMarkerName))
 
 	data, err := os.ReadFile(filepath.Join(gitDir, "info", "exclude"))
 	require.NoError(t, err)
-	assert.Equal(t, ".npub-build\n", string(data))
+	assert.Equal(t, build.BuildMarkerName+"\n", string(data))
 }
 
 func TestPrepareRefusesEmptyBuildDir(t *testing.T) {

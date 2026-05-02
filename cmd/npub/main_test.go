@@ -198,14 +198,9 @@ notes_path: "/tmp/notes"
 func TestClearCommandDryRunUsesManagedBuildDir(t *testing.T) {
 	dir := t.TempDir()
 	cacheDir := filepath.Join(dir, "cache")
-	cfgPath := filepath.Join(dir, config.DefaultConfigFile)
-	require.NoError(t, os.WriteFile(cfgPath, []byte(`
-notes_path: "/tmp/notes"
-site_root_url: "https://example.com"
-site_name: "Test Site"
-author_name: "Test Author"
-cache_path: "`+cacheDir+`"
-`), 0o644))
+	buildDir := deploy.BuildDir(cacheDir)
+	require.NoError(t, build.WriteBuildMarker(buildDir))
+	cfgPath := writeClearTestConfig(t, dir, cacheDir)
 
 	var buf bytes.Buffer
 	rootCmd.SetOut(&buf)
@@ -217,8 +212,44 @@ cache_path: "`+cacheDir+`"
 	})
 
 	require.NoError(t, rootCmd.Execute())
-	assert.Contains(t, buf.String(), "would clear "+deploy.BuildDir(cacheDir))
-	assert.NoDirExists(t, deploy.BuildDir(cacheDir))
+	assert.Contains(t, buf.String(), "would clear "+buildDir)
+	assert.DirExists(t, buildDir)
+}
+
+func TestClearCommandDryRunChecksMarker(t *testing.T) {
+	dir := t.TempDir()
+	cacheDir := filepath.Join(dir, "cache")
+	buildDir := deploy.BuildDir(cacheDir)
+	require.NoError(t, os.MkdirAll(buildDir, 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(buildDir, "index.html"), []byte("site"), 0o644))
+	cfgPath := writeClearTestConfig(t, dir, cacheDir)
+
+	var buf bytes.Buffer
+	rootCmd.SetOut(&buf)
+	rootCmd.SetErr(&buf)
+	rootCmd.SetArgs([]string{"clear", "--config", cfgPath, "--dry-run"})
+	t.Cleanup(func() {
+		rootCmd.SetArgs(nil)
+		resetFlags(rootCmd)
+	})
+
+	err := rootCmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not marked as an npub build directory")
+	assert.FileExists(t, filepath.Join(buildDir, "index.html"))
+}
+
+func writeClearTestConfig(t *testing.T, dir, cacheDir string) string {
+	t.Helper()
+	cfgPath := filepath.Join(dir, config.DefaultConfigFile)
+	require.NoError(t, os.WriteFile(cfgPath, []byte(`
+notes_path: "/tmp/notes"
+site_root_url: "https://example.com"
+site_name: "Test Site"
+author_name: "Test Author"
+cache_path: "`+cacheDir+`"
+`), 0o644))
+	return cfgPath
 }
 
 func TestClearCommandRejectsPositionalPathAndBuildHasNoOutFlag(t *testing.T) {

@@ -8,6 +8,7 @@
 
 ### Changed
 
+- Rename the cache lock file from `.deploy.lock` to `.npub-cache.lock` and make `npub clear --dry-run` validate marker guardrails.
 - Remove the `npub build --out` override so builds always target the managed `<cache_path>/build` directory.
 - Adopt an Unreleased-first changelog and release-PR versioning workflow so multiple PRs can be bundled into one release ([#83]).
 

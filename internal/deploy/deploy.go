@@ -14,6 +14,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/dreikanter/npub/internal/build"
 )
 
 // CacheRoot returns the root directory used for deploy artifacts.
@@ -68,8 +70,6 @@ func RepoSlug(repoURL string) string {
 	}
 	return s
 }
-
-const buildMarkerName = ".npub-build"
 
 // Options controls Prepare, Commit, and Push.
 type Options struct {
@@ -152,7 +152,7 @@ func Prepare(repoURL, gitDir, buildDir string, opt Options) error {
 		}
 	}
 
-	if err := ensureGitExclude(gitDir, buildMarkerName); err != nil {
+	if err := ensureGitExclude(gitDir, build.BuildMarkerName); err != nil {
 		return err
 	}
 
