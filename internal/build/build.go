@@ -100,6 +100,23 @@ type feedNoteData struct {
 	Body  string
 }
 
+// BuildMarkerName is the marker file npub writes into managed build output.
+const BuildMarkerName = ".npub-build"
+
+const buildMarkerText = "This directory is managed by npub and may be cleared by `npub clear`.\n" +
+	"This file is a safety guardrail to help prevent accidental deletion of unrelated directories.\n"
+
+// WriteBuildMarker writes the npub ownership marker into buildPath.
+func WriteBuildMarker(buildPath string) error {
+	if err := os.MkdirAll(buildPath, 0o755); err != nil {
+		return fmt.Errorf("creating build dir: %w", err)
+	}
+	if err := os.WriteFile(filepath.Join(buildPath, BuildMarkerName), []byte(buildMarkerText), 0o644); err != nil {
+		return fmt.Errorf("writing build marker: %w", err)
+	}
+	return nil
+}
+
 // cleanBuildDir removes all non-dotfile entries from the build directory,
 // preserving dotfiles and dotdirs (e.g. .git, .nojekyll).
 func cleanBuildDir(buildPath string) error {
@@ -183,8 +200,11 @@ type Assets struct {
 // the directory the rendered files are written to; cfg supplies everything
 // else (notes location, site metadata, etc).
 func Build(store note.Store, cfg config.Config, buildPath string, assets Assets) error {
-	// 0. Clean build directory.
+	// 0. Clean build directory and mark it as npub-managed before rendering.
 	if err := cleanBuildDir(buildPath); err != nil {
+		return err
+	}
+	if err := WriteBuildMarker(buildPath); err != nil {
 		return err
 	}
 

@@ -54,9 +54,9 @@ All values can be overridden with CLI flags:
 
 The build output directory is not a config option. `npub build` writes to
 `<cache_path>/build` (where `cache_path` defaults to `~/.cache/npub/<repo>`).
-Pass `--out <dir>` to override. Either `deploy_repo` or `--out` must be set;
-there is no implicit `./dist`. `build` never talks to the deploy_repo
-remote — all git operations happen in `deploy`.
+Either `deploy_repo` or `cache_path` must be set; there is no implicit `./dist`.
+`build` never talks to the deploy_repo remote — all git operations happen in
+`deploy`.
 
 Priority: CLI flags > YAML config.
 
@@ -124,6 +124,14 @@ npub deploy
 `npub build` writes the site to `~/.cache/npub/<repo>/build`. It never contacts the remote — everything is offline.
 
 `npub deploy` keeps a bare clone of `deploy_repo` at `~/.cache/npub/<repo>/git` and uses `~/.cache/npub/<repo>/build` as a temporary work-tree (via git's `--git-dir` and `--work-tree` options) when committing. There is no second copy of the site on disk: deploy fetches, points git at the build directory, and runs `add -A` + commit + push. Stale files are removed and changed files updated by the same `add -A` pass. Use `--dry-run` to commit locally without pushing.
+
+Clear the managed build output:
+
+```sh
+npub clear
+```
+
+`npub clear` removes only the managed `<cache_path>/build` directory. It does not accept arbitrary paths. Non-empty build output must contain npub's `.npub-build` marker, which `npub build` writes as a deletion guardrail.
 
 ## Notes format
 

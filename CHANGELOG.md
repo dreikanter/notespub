@@ -2,14 +2,20 @@
 
 ## [Unreleased]
 
+### Added
+
+- Add `npub clear` to remove only the managed `<cache_path>/build` output directory, guarded by an npub marker file and dangerous-path checks ([#86]).
+
 ### Changed
 
+- Remove the `npub build --out` override so builds always target the managed `<cache_path>/build` directory.
 - Adopt an Unreleased-first changelog and release-PR versioning workflow so multiple PRs can be bundled into one release ([#83]).
 
 ### Fixed
 
 - Fail fast when another `npub deploy` is already using the same cache directory, avoiding concurrent git index mutations.
 
+[#86]: https://github.com/dreikanter/npub/pull/86
 [#83]: https://github.com/dreikanter/npub/pull/83
 
 ## [0.2.16]

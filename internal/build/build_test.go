@@ -39,6 +39,17 @@ func TestCleanBuildDirNonExistent(t *testing.T) {
 	assert.NoError(t, cleanBuildDir("/tmp/npub-does-not-exist-"+t.Name()))
 }
 
+func TestWriteBuildMarker(t *testing.T) {
+	dir := t.TempDir()
+
+	require.NoError(t, WriteBuildMarker(dir))
+
+	data, err := os.ReadFile(filepath.Join(dir, BuildMarkerName))
+	require.NoError(t, err)
+	assert.Contains(t, string(data), "managed by npub")
+	assert.Contains(t, string(data), "npub clear")
+}
+
 func TestCleanBuildDirRejectsRoot(t *testing.T) {
 	require.Error(t, cleanBuildDir("/"))
 }

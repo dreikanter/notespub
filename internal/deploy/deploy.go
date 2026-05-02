@@ -69,6 +69,8 @@ func RepoSlug(repoURL string) string {
 	return s
 }
 
+const buildMarkerName = ".npub-build"
+
 // Options controls Prepare, Commit, and Push.
 type Options struct {
 	Stdout io.Writer
@@ -150,6 +152,10 @@ func Prepare(repoURL, gitDir, buildDir string, opt Options) error {
 		}
 	}
 
+	if err := ensureGitExclude(gitDir, buildMarkerName); err != nil {
+		return err
+	}
+
 	if err := runGit(stdout, stderr, "", "--git-dir="+gitDir, "fetch", "--prune", "origin"); err != nil {
 		return fmt.Errorf("fetching %s: %w", repoURL, err)
 	}
@@ -164,6 +170,36 @@ func Prepare(repoURL, gitDir, buildDir string, opt Options) error {
 	if err := runGit(stdout, stderr, "", "--git-dir="+gitDir, "--work-tree="+buildDir,
 		"reset", "--mixed", "origin/"+branch); err != nil {
 		return fmt.Errorf("resetting to origin/%s: %w", branch, err)
+	}
+	return nil
+}
+
+func ensureGitExclude(gitDir, pattern string) error {
+	excludePath := filepath.Join(gitDir, "info", "exclude")
+	if err := os.MkdirAll(filepath.Dir(excludePath), 0o755); err != nil {
+		return fmt.Errorf("creating git exclude directory %s: %w", filepath.Dir(excludePath), err)
+	}
+	data, err := os.ReadFile(excludePath)
+	if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("reading git exclude %s: %w", excludePath, err)
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		if strings.TrimSpace(line) == pattern {
+			return nil
+		}
+	}
+	file, err := os.OpenFile(excludePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
+	if err != nil {
+		return fmt.Errorf("opening git exclude %s: %w", excludePath, err)
+	}
+	defer func() { _ = file.Close() }()
+	if len(data) > 0 && !bytes.HasSuffix(data, []byte("\n")) {
+		if _, err := file.WriteString("\n"); err != nil {
+			return fmt.Errorf("writing git exclude %s: %w", excludePath, err)
+		}
+	}
+	if _, err := fmt.Fprintf(file, "%s\n", pattern); err != nil {
+		return fmt.Errorf("writing git exclude %s: %w", excludePath, err)
 	}
 	return nil
 }

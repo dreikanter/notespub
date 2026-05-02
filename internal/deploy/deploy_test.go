@@ -43,7 +43,7 @@ func TestBuildGitAndLockDir(t *testing.T) {
 	assert.Equal(t, "/tmp/whatever/.deploy.lock", LockPath(cache))
 }
 
-func TestAcquireLockRejectsConcurrentDeploy(t *testing.T) {
+func TestAcquireLockRejectsConcurrentUse(t *testing.T) {
 	cache := t.TempDir()
 
 	lock, err := AcquireLock(cache)
@@ -53,12 +53,23 @@ func TestAcquireLockRejectsConcurrentDeploy(t *testing.T) {
 	second, err := AcquireLock(cache)
 	require.Error(t, err)
 	assert.Nil(t, second)
-	assert.Contains(t, err.Error(), "another `npub deploy` is in progress")
+	assert.Contains(t, err.Error(), "another `npub` command is using this cache")
 	assert.Contains(t, err.Error(), LockPath(cache))
 
 	require.NoError(t, lock.Release())
 	lock, err = AcquireLock(cache)
 	require.NoError(t, err)
+}
+
+func TestEnsureGitExcludeAddsPatternOnce(t *testing.T) {
+	gitDir := t.TempDir()
+
+	require.NoError(t, ensureGitExclude(gitDir, buildMarkerName))
+	require.NoError(t, ensureGitExclude(gitDir, buildMarkerName))
+
+	data, err := os.ReadFile(filepath.Join(gitDir, "info", "exclude"))
+	require.NoError(t, err)
+	assert.Equal(t, ".npub-build\n", string(data))
 }
 
 func TestPrepareRefusesEmptyBuildDir(t *testing.T) {

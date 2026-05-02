@@ -6,7 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/dreikanter/npub/internal/build"
 	"github.com/dreikanter/npub/internal/config"
+	"github.com/dreikanter/npub/internal/deploy"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
@@ -193,6 +195,120 @@ notes_path: "/tmp/notes"
 	assert.Contains(t, out, "notes_path: /tmp/notes")
 }
 
+func TestClearCommandDryRunUsesManagedBuildDir(t *testing.T) {
+	dir := t.TempDir()
+	cacheDir := filepath.Join(dir, "cache")
+	cfgPath := filepath.Join(dir, config.DefaultConfigFile)
+	require.NoError(t, os.WriteFile(cfgPath, []byte(`
+notes_path: "/tmp/notes"
+site_root_url: "https://example.com"
+site_name: "Test Site"
+author_name: "Test Author"
+cache_path: "`+cacheDir+`"
+`), 0o644))
+
+	var buf bytes.Buffer
+	rootCmd.SetOut(&buf)
+	rootCmd.SetErr(&buf)
+	rootCmd.SetArgs([]string{"clear", "--config", cfgPath, "--dry-run"})
+	t.Cleanup(func() {
+		rootCmd.SetArgs(nil)
+		resetFlags(rootCmd)
+	})
+
+	require.NoError(t, rootCmd.Execute())
+	assert.Contains(t, buf.String(), "would clear "+deploy.BuildDir(cacheDir))
+	assert.NoDirExists(t, deploy.BuildDir(cacheDir))
+}
+
+func TestClearCommandRejectsPositionalPathAndBuildHasNoOutFlag(t *testing.T) {
+	assert.Nil(t, clearCmd.Flags().Lookup("out"))
+	assert.Nil(t, buildCmd.Flags().Lookup("out"))
+
+	var buf bytes.Buffer
+	rootCmd.SetOut(&buf)
+	rootCmd.SetErr(&buf)
+	rootCmd.SetArgs([]string{"clear", "/tmp/site"})
+	t.Cleanup(func() {
+		rootCmd.SetArgs(nil)
+		resetFlags(rootCmd)
+	})
+
+	require.Error(t, rootCmd.Execute())
+}
+
+func TestClearBuildDirRequiresMarkerForNonEmptyDir(t *testing.T) {
+	buildDir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(buildDir, "index.html"), []byte("site"), 0o644))
+
+	cleared, err := clearBuildDir(buildDir)
+	require.Error(t, err)
+	assert.False(t, cleared)
+	assert.Contains(t, err.Error(), "not marked as an npub build directory")
+	assert.FileExists(t, filepath.Join(buildDir, "index.html"))
+}
+
+func TestClearBuildDirRemovesMarkedDir(t *testing.T) {
+	buildDir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(buildDir, "index.html"), []byte("site"), 0o644))
+	require.NoError(t, build.WriteBuildMarker(buildDir))
+
+	cleared, err := clearBuildDir(buildDir)
+	require.NoError(t, err)
+	assert.True(t, cleared)
+	assert.NoDirExists(t, buildDir)
+}
+
+func TestClearBuildDirRemovesEmptyUnmarkedDir(t *testing.T) {
+	buildDir := t.TempDir()
+
+	cleared, err := clearBuildDir(buildDir)
+	require.NoError(t, err)
+	assert.True(t, cleared)
+	assert.NoDirExists(t, buildDir)
+}
+
+func TestClearBuildDirReturnsFalseForMissingDir(t *testing.T) {
+	buildDir := filepath.Join(t.TempDir(), "missing")
+
+	cleared, err := clearBuildDir(buildDir)
+	require.NoError(t, err)
+	assert.False(t, cleared)
+}
+
+func TestValidateClearTargetRejectsImportantPaths(t *testing.T) {
+	cacheDir := t.TempDir()
+	cfg := config.Config{NotesPath: deploy.BuildDir(cacheDir)}
+
+	err := validateClearTarget(deploy.BuildDir(cacheDir), cacheDir, cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "notes_path")
+}
+
+func TestValidateClearTargetRejectsSymlink(t *testing.T) {
+	cacheDir := t.TempDir()
+	realBuild := filepath.Join(cacheDir, "real-build")
+	require.NoError(t, os.MkdirAll(realBuild, 0o755))
+	buildDir := deploy.BuildDir(cacheDir)
+	require.NoError(t, os.Symlink(realBuild, buildDir))
+
+	err := validateClearTarget(buildDir, cacheDir, config.Config{})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "symlinked")
+}
+
+func TestValidateClearTargetRejectsSymlinkedCachePath(t *testing.T) {
+	root := t.TempDir()
+	realCache := filepath.Join(root, "real-cache")
+	require.NoError(t, os.MkdirAll(realCache, 0o755))
+	cacheDir := filepath.Join(root, "cache-link")
+	require.NoError(t, os.Symlink(realCache, cacheDir))
+
+	err := validateClearTarget(deploy.BuildDir(cacheDir), cacheDir, config.Config{})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "symlinked")
+}
+
 func TestResolveConfigPath(t *testing.T) {
 	notesDir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(notesDir, config.DefaultConfigFile), []byte("---\n"), 0o644))
@@ -237,4 +353,3 @@ func TestResolveConfigPath(t *testing.T) {
 		})
 	}
 }
-
