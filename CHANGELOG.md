@@ -14,6 +14,7 @@
 
 ### Fixed
 
+- Make `npub build` atomic by rendering into a temporary directory before replacing `<cache_path>/build`, leaving the previous successful build intact if rendering fails.
 - Fail fast when another `npub deploy` is already using the same cache directory, avoiding concurrent git index mutations.
 
 [#86]: https://github.com/dreikanter/npub/pull/86

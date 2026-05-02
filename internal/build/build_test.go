@@ -2,9 +2,11 @@ package build
 
 import (
 	"bytes"
+	"errors"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -82,6 +84,66 @@ func TestCleanBuildDirRejectsHome(t *testing.T) {
 	require.Error(t, cleanBuildDir(home))
 }
 
+func TestAtomicBuildLeavesPreviousBuildOnFailure(t *testing.T) {
+	cacheDir := t.TempDir()
+	buildDir := filepath.Join(cacheDir, "build")
+	assetsDir := t.TempDir()
+
+	require.NoError(t, os.MkdirAll(buildDir, 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(buildDir, "index.html"), []byte("previous"), 0o644))
+	require.NoError(t, WriteBuildMarker(buildDir))
+
+	cfg := testConfig(t, buildDir, assetsDir)
+	err := AtomicBuild(failingStore{err: errors.New("boom")}, cfg, buildDir, Assets{
+		Templates:  os.DirFS("../../"),
+		StyleCSS:   []byte("/* test */"),
+		FaviconSVG: []byte("<svg></svg>"),
+	})
+	require.Error(t, err)
+
+	data, readErr := os.ReadFile(filepath.Join(buildDir, "index.html"))
+	require.NoError(t, readErr)
+	assert.Equal(t, "previous", string(data))
+	assert.FileExists(t, filepath.Join(buildDir, BuildMarkerName))
+	assert.Empty(t, tempBuildDirNames(t, cacheDir))
+}
+
+func TestAtomicBuildReplacesBuildOnSuccessAndRemovesStaleTemps(t *testing.T) {
+	cacheDir := t.TempDir()
+	buildDir := filepath.Join(cacheDir, "build")
+	assetsDir := t.TempDir()
+	staleDir := filepath.Join(cacheDir, "build.tmp-stale")
+
+	require.NoError(t, os.MkdirAll(buildDir, 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(buildDir, "old.html"), []byte("old"), 0o644))
+	require.NoError(t, os.MkdirAll(staleDir, 0o755))
+
+	store := note.NewMemStore()
+	_, err := store.Put(note.Entry{
+		ID: 3961,
+		Meta: note.Meta{
+			Title:     "Atomic Note",
+			Slug:      "atomic-note",
+			Public:    true,
+			CreatedAt: time.Date(2023, 1, 30, 0, 0, 0, 0, time.UTC),
+		},
+		Body: "New build.\n",
+	})
+	require.NoError(t, err)
+
+	cfg := testConfig(t, buildDir, assetsDir)
+	require.NoError(t, AtomicBuild(store, cfg, buildDir, Assets{
+		Templates:  os.DirFS("../../"),
+		StyleCSS:   []byte("/* test */"),
+		FaviconSVG: []byte("<svg></svg>"),
+	}))
+
+	assert.NoFileExists(t, filepath.Join(buildDir, "old.html"))
+	assert.FileExists(t, filepath.Join(buildDir, "atomic-note", "index.html"))
+	assert.FileExists(t, filepath.Join(buildDir, BuildMarkerName))
+	assert.Empty(t, tempBuildDirNames(t, cacheDir))
+}
+
 func testConfig(t *testing.T, _, assetsPath string) config.Config {
 	t.Helper()
 	return config.Config{
@@ -90,6 +152,28 @@ func testConfig(t *testing.T, _, assetsPath string) config.Config {
 		SiteName:    "Test Site",
 		AuthorName:  "Test Author",
 	}
+}
+
+type failingStore struct {
+	note.Store
+	err error
+}
+
+func (s failingStore) All(opts ...note.QueryOpt) ([]note.Entry, error) {
+	return nil, s.err
+}
+
+func tempBuildDirNames(t *testing.T, cacheDir string) []string {
+	t.Helper()
+	entries, err := os.ReadDir(cacheDir)
+	require.NoError(t, err)
+	var names []string
+	for _, entry := range entries {
+		if entry.IsDir() && strings.HasPrefix(entry.Name(), "build.tmp-") {
+			names = append(names, entry.Name())
+		}
+	}
+	return names
 }
 
 func TestBuildPublicNote(t *testing.T) {
