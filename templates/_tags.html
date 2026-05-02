@@ -1,9 +1,19 @@
 {{define "tags"}}
-<ul class="list-none !pl-0 !my-0 flex-shrink-0 hidden sm:block">
-  {{range .}}
-    <li class="w-fit !m-0 !p-0 text-sm leading-6">
-      <a href="/tags/{{.}}">#{{.}}</a>
-    </li>
-  {{end}}
-</ul>
+{{if .Tags}}
+  <div class="not-prose hidden sm:flex flex-shrink-0 flex-wrap content-start gap-2 max-w-44">
+    {{range .Tags}}
+      <a href="/tags/{{.}}" class="text-sm no-underline rounded-md px-2 py-1 {{if eq . $.CurrentTag}}bg-slate-500 text-slate-100{{else}}bg-slate-100 text-slate-600 hover:text-slate-800{{end}}">#{{.}}</a>
+    {{end}}
+  </div>
+{{end}}
+{{end}}
+
+{{define "mobile_tags"}}
+{{if .Tags}}
+  <div class="not-prose sm:hidden mb-6 flex flex-wrap gap-2">
+    {{range .Tags}}
+      <a href="/tags/{{.}}" class="text-sm no-underline rounded-md px-2 py-1 {{if eq . $.CurrentTag}}bg-slate-500 text-slate-100{{else}}bg-slate-100 text-slate-600 hover:text-slate-800{{end}}">#{{.}}</a>
+    {{end}}
+  </div>
+{{end}}
 {{end}}

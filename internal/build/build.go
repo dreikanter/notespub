@@ -74,9 +74,10 @@ type noteViewData struct {
 
 // indexData is the data passed to index.html inner template.
 type indexData struct {
-	Tags      []string
-	NotePages []noteViewData
-	Intro     string
+	Tags       []string
+	CurrentTag string
+	NotePages  []noteViewData
+	Intro      string
 }
 
 // tagData is the data passed to tag.html inner template.
