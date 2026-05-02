@@ -121,6 +121,12 @@ With --dry-run, deploy commits locally but skips the push.`,
 		if err != nil {
 			return err
 		}
+		lock, err := deploy.AcquireLock(cacheDir)
+		if err != nil {
+			return err
+		}
+		defer func() { _ = lock.Release() }()
+
 		buildDir := deploy.BuildDir(cacheDir)
 		gitDir := deploy.GitDir(cacheDir)
 

@@ -36,10 +36,29 @@ func TestDefaultCacheDir(t *testing.T) {
 	assert.Equal(t, "npub", filepath.Base(filepath.Dir(dir)))
 }
 
-func TestBuildAndGitDir(t *testing.T) {
+func TestBuildGitAndLockDir(t *testing.T) {
 	cache := "/tmp/whatever"
 	assert.Equal(t, "/tmp/whatever/build", BuildDir(cache))
 	assert.Equal(t, "/tmp/whatever/git", GitDir(cache))
+	assert.Equal(t, "/tmp/whatever/.deploy.lock", LockPath(cache))
+}
+
+func TestAcquireLockRejectsConcurrentDeploy(t *testing.T) {
+	cache := t.TempDir()
+
+	lock, err := AcquireLock(cache)
+	require.NoError(t, err)
+	defer func() { require.NoError(t, lock.Release()) }()
+
+	second, err := AcquireLock(cache)
+	require.Error(t, err)
+	assert.Nil(t, second)
+	assert.Contains(t, err.Error(), "another `npub deploy` is in progress")
+	assert.Contains(t, err.Error(), LockPath(cache))
+
+	require.NoError(t, lock.Release())
+	lock, err = AcquireLock(cache)
+	require.NoError(t, err)
 }
 
 func TestPrepareRefusesEmptyBuildDir(t *testing.T) {

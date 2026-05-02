@@ -6,6 +6,10 @@
 
 - Adopt an Unreleased-first changelog and release-PR versioning workflow so multiple PRs can be bundled into one release ([#83]).
 
+### Fixed
+
+- Fail fast when another `npub deploy` is already using the same cache directory, avoiding concurrent git index mutations.
+
 [#83]: https://github.com/dreikanter/npub/pull/83
 
 ## [0.2.16]
