@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -189,12 +190,6 @@ contain npub's ownership marker.`,
 		}
 		buildDir := deploy.BuildDir(cacheDir)
 
-		lock, err := deploy.AcquireLock(cacheDir)
-		if err != nil {
-			return err
-		}
-		defer func() { _ = lock.Release() }()
-
 		if err := validateClearTarget(buildDir, cacheDir, cfg); err != nil {
 			return err
 		}
@@ -203,6 +198,13 @@ contain npub's ownership marker.`,
 			_, err := fmt.Fprintf(cmd.OutOrStdout(), "would clear %s\n", buildDir)
 			return err
 		}
+
+		lock, err := deploy.AcquireLock(cacheDir)
+		if err != nil {
+			return err
+		}
+		defer func() { _ = lock.Release() }()
+
 		cleared, err := clearBuildDir(buildDir)
 		if err != nil {
 			return err
@@ -443,9 +445,12 @@ func loadConfigOpt(cmd *cobra.Command, cfgPath string) (config.Config, error) {
 	return cfg, err
 }
 
+// loadConfigForClear treats missing site metadata as non-fatal because clear
+// only needs cache_path/deploy_repo to resolve the managed build directory.
 func loadConfigForClear(cmd *cobra.Command, cfgPath string) (config.Config, error) {
 	cfg, _, err := loadConfig(cmd, cfgPath)
-	if err != nil && !strings.HasPrefix(err.Error(), "missing required fields:") {
+	var missingRequired config.MissingRequiredError
+	if err != nil && !errors.As(err, &missingRequired) {
 		return cfg, err
 	}
 	return cfg, nil
@@ -481,11 +486,11 @@ func clearBuildDir(buildDir string) (bool, error) {
 }
 
 func validateClearTarget(buildDir, cacheDir string, cfg config.Config) error {
-	if !samePath(buildDir, deploy.BuildDir(cacheDir)) {
-		return fmt.Errorf("refusing to clear %s: target must be exactly %s", buildDir, deploy.BuildDir(cacheDir))
-	}
 	if buildDir == "" {
 		return fmt.Errorf("refusing to clear empty build path")
+	}
+	if !samePath(buildDir, deploy.BuildDir(cacheDir)) {
+		return fmt.Errorf("refusing to clear %s: target must be exactly %s", buildDir, deploy.BuildDir(cacheDir))
 	}
 	absBuild, err := filepath.Abs(buildDir)
 	if err != nil {
@@ -494,10 +499,15 @@ func validateClearTarget(buildDir, cacheDir string, cfg config.Config) error {
 	if absBuild == string(filepath.Separator) {
 		return fmt.Errorf("refusing to clear dangerous build path: %s", absBuild)
 	}
-	if info, err := os.Lstat(absBuild); err == nil && info.Mode()&os.ModeSymlink != 0 {
-		return fmt.Errorf("refusing to clear symlinked build directory: %s", absBuild)
-	} else if err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("checking build path %s: %w", absBuild, err)
+	if err := rejectSymlinkedPath(absBuild); err != nil {
+		return err
+	}
+	absCache, err := filepath.Abs(cacheDir)
+	if err != nil {
+		return fmt.Errorf("resolving cache_path: %w", err)
+	}
+	if err := rejectSymlinkedPath(absCache); err != nil {
+		return err
 	}
 
 	important := map[string]string{
@@ -527,6 +537,17 @@ func validateClearTarget(buildDir, cacheDir string, cfg config.Config) error {
 		if isAncestor(absBuild, absPath) {
 			return fmt.Errorf("refusing to clear %s: it contains the %s %s", absBuild, name, absPath)
 		}
+	}
+	return nil
+}
+
+func rejectSymlinkedPath(path string) error {
+	info, err := os.Lstat(filepath.Clean(path))
+	if err == nil && info.Mode()&os.ModeSymlink != 0 {
+		return fmt.Errorf("refusing to clear symlinked path: %s", path)
+	}
+	if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("checking path %s: %w", path, err)
 	}
 	return nil
 }

@@ -12,6 +12,15 @@ import (
 // DefaultConfigFile is the conventional config file name.
 const DefaultConfigFile = "npub.yml"
 
+// MissingRequiredError reports required config fields that were not set.
+type MissingRequiredError struct {
+	Fields []string
+}
+
+func (e MissingRequiredError) Error() string {
+	return "missing required fields: " + strings.Join(e.Fields, ", ")
+}
+
 // Config holds all configuration for a npub build.
 type Config struct {
 	NotesPath   string `yaml:"notes_path"`
@@ -133,7 +142,7 @@ func Load(yamlPath string, flagOverrides map[string]string) (Config, error) {
 		missing = append(missing, "author_name")
 	}
 	if len(missing) > 0 {
-		return cfg, fmt.Errorf("missing required fields: %s", strings.Join(missing, ", "))
+		return cfg, MissingRequiredError{Fields: missing}
 	}
 
 	return cfg, nil

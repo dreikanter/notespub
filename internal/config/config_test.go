@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -58,6 +59,9 @@ notes_path: "/tmp/notes"
 
 	_, err := Load(yamlPath, nil)
 	require.Error(t, err)
+	var missing MissingRequiredError
+	require.True(t, errors.As(err, &missing))
+	assert.ElementsMatch(t, []string{"site_root_url", "site_name", "author_name"}, missing.Fields)
 }
 
 func TestAssetsPathDefaultsToNotesImages(t *testing.T) {

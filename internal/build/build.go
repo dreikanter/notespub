@@ -200,8 +200,11 @@ type Assets struct {
 // the directory the rendered files are written to; cfg supplies everything
 // else (notes location, site metadata, etc).
 func Build(store note.Store, cfg config.Config, buildPath string, assets Assets) error {
-	// 0. Clean build directory.
+	// 0. Clean build directory and mark it as npub-managed before rendering.
 	if err := cleanBuildDir(buildPath); err != nil {
+		return err
+	}
+	if err := WriteBuildMarker(buildPath); err != nil {
 		return err
 	}
 
@@ -394,7 +397,7 @@ func Build(store note.Store, cfg config.Config, buildPath string, assets Assets)
 		return fmt.Errorf("writing feed: %w", err)
 	}
 
-	return WriteBuildMarker(buildPath)
+	return nil
 }
 
 // buildNotePages converts note.Entry values into page.NotePage models and

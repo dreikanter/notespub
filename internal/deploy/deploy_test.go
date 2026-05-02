@@ -61,6 +61,17 @@ func TestAcquireLockRejectsConcurrentUse(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestEnsureGitExcludeAddsPatternOnce(t *testing.T) {
+	gitDir := t.TempDir()
+
+	require.NoError(t, ensureGitExclude(gitDir, buildMarkerName))
+	require.NoError(t, ensureGitExclude(gitDir, buildMarkerName))
+
+	data, err := os.ReadFile(filepath.Join(gitDir, "info", "exclude"))
+	require.NoError(t, err)
+	assert.Equal(t, ".npub-build\n", string(data))
+}
+
 func TestPrepareRefusesEmptyBuildDir(t *testing.T) {
 	root := t.TempDir()
 	buildDir := filepath.Join(root, "build")

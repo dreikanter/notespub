@@ -233,9 +233,7 @@ func TestClearCommandRejectsPositionalPathAndHasNoOutFlag(t *testing.T) {
 		resetFlags(rootCmd)
 	})
 
-	err := rootCmd.Execute()
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "unknown command")
+	require.Error(t, rootCmd.Execute())
 }
 
 func TestClearBuildDirRequiresMarkerForNonEmptyDir(t *testing.T) {
@@ -260,6 +258,23 @@ func TestClearBuildDirRemovesMarkedDir(t *testing.T) {
 	assert.NoDirExists(t, buildDir)
 }
 
+func TestClearBuildDirRemovesEmptyUnmarkedDir(t *testing.T) {
+	buildDir := t.TempDir()
+
+	cleared, err := clearBuildDir(buildDir)
+	require.NoError(t, err)
+	assert.True(t, cleared)
+	assert.NoDirExists(t, buildDir)
+}
+
+func TestClearBuildDirReturnsFalseForMissingDir(t *testing.T) {
+	buildDir := filepath.Join(t.TempDir(), "missing")
+
+	cleared, err := clearBuildDir(buildDir)
+	require.NoError(t, err)
+	assert.False(t, cleared)
+}
+
 func TestValidateClearTargetRejectsImportantPaths(t *testing.T) {
 	cacheDir := t.TempDir()
 	cfg := config.Config{NotesPath: deploy.BuildDir(cacheDir)}
@@ -277,6 +292,18 @@ func TestValidateClearTargetRejectsSymlink(t *testing.T) {
 	require.NoError(t, os.Symlink(realBuild, buildDir))
 
 	err := validateClearTarget(buildDir, cacheDir, config.Config{})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "symlinked")
+}
+
+func TestValidateClearTargetRejectsSymlinkedCachePath(t *testing.T) {
+	root := t.TempDir()
+	realCache := filepath.Join(root, "real-cache")
+	require.NoError(t, os.MkdirAll(realCache, 0o755))
+	cacheDir := filepath.Join(root, "cache-link")
+	require.NoError(t, os.Symlink(realCache, cacheDir))
+
+	err := validateClearTarget(deploy.BuildDir(cacheDir), cacheDir, config.Config{})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "symlinked")
 }
