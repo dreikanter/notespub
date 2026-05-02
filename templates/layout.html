@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="author" content="{{.Config.AuthorName}}">
   <meta name="description" content="{{.Page.MetaDescription}}" />
+  <meta name="generator" content="{{.Config.Generator}}" />
   <title>{{if .Page.Title}}{{.Page.Title}} - {{end}}{{.Config.SiteName}}</title>
   {{if .Page.CanonicalPath}}
     <link rel="canonical" href="{{.Config.SiteRootURL}}/{{.Page.CanonicalPath}}">

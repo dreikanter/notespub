@@ -199,6 +199,7 @@ func TestBuildPublicNote(t *testing.T) {
 		Templates:  os.DirFS("../../"),
 		StyleCSS:   []byte("/* test */"),
 		FaviconSVG: []byte("<svg></svg>"),
+		Generator:  "npub test-version",
 	}
 	require.NoError(t, Build(store, cfg, buildDir, assets))
 
@@ -236,6 +237,7 @@ func TestBuildPublicNote(t *testing.T) {
 	indexData, err := os.ReadFile(filepath.Join(buildDir, "index.html"))
 	require.NoError(t, err)
 	assert.Contains(t, string(indexData), "/* test */")
+	assert.Contains(t, string(indexData), `<meta name="generator" content="npub test-version" />`)
 	assert.Contains(t, string(indexData), `href="data:image/svg&#43;xml;base64,PHN2Zz48L3N2Zz4="`)
 	assert.NotContains(t, string(indexData), `href="/style.css"`)
 }

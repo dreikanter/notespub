@@ -10,6 +10,7 @@
 
 ### Added
 
+- Add a `generator` meta tag to rendered HTML identifying the npub version used for the build.
 - Add `npub clear` to remove only the managed `<cache_path>/build` output directory, guarded by an npub marker file and dangerous-path checks ([#86]).
 
 ### Changed

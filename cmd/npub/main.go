@@ -93,7 +93,9 @@ operations happen in deploy.`,
 
 		log.Printf("building site from %s to %s", cfg.NotesPath, buildPath)
 		store := note.NewOSStore(cfg.NotesPath)
-		if err := build.AtomicBuild(store, cfg, buildPath, npub.Assets); err != nil {
+		assets := npub.Assets
+		assets.Generator = "npub " + Version
+		if err := build.AtomicBuild(store, cfg, buildPath, assets); err != nil {
 			return err
 		}
 		log.Println("build complete")

@@ -43,6 +43,7 @@ type configData struct {
 	FeedPath       string
 	LicenseName    string
 	LicenseURL     string
+	Generator      string
 	StyleCSS       template.CSS
 	HighlightCSS   template.CSS
 	FaviconDataURI template.URL
@@ -195,6 +196,7 @@ type Assets struct {
 	Templates  fs.FS
 	StyleCSS   []byte
 	FaviconSVG []byte
+	Generator  string
 }
 
 // RemoveStaleTempBuildDirs removes temporary build directories left by failed
@@ -341,6 +343,10 @@ func Build(store note.Store, cfg config.Config, buildPath string, assets Assets)
 		return fmt.Errorf("parsing feed template: %w", err)
 	}
 
+	generator := assets.Generator
+	if generator == "" {
+		generator = "npub"
+	}
 	cfgData := configData{
 		SiteName:       cfg.SiteName,
 		SiteDomain:     cfg.SiteDomain(),
@@ -351,6 +357,7 @@ func Build(store note.Store, cfg config.Config, buildPath string, assets Assets)
 		FeedPath:       cfg.FeedPath(),
 		LicenseName:    cfg.LicenseName,
 		LicenseURL:     cfg.LicenseURL,
+		Generator:      generator,
 		StyleCSS:       template.CSS(assets.StyleCSS),
 		HighlightCSS:   template.CSS(render.HighlightCSS()),
 		FaviconDataURI: faviconDataURI(assets.FaviconSVG),
