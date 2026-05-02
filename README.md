@@ -127,7 +127,7 @@ npub deploy
 
 ## Notes format
 
-Notes are Markdown files managed by [notesctl](https://github.com/dreikanter/notesctl). A note becomes part of the published site when its frontmatter includes `public: true`.
+Notes are Markdown files managed by [notes](https://github.com/dreikanter/notes). A note becomes part of the published site when its frontmatter includes `public: true`.
 
 ## Versioning
 
