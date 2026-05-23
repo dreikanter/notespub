@@ -1,8 +1,15 @@
-// Package deploy publishes the built site to a git remote. It maintains a
-// bare clone of deploy_repo at ~/.cache/npub/<repo>/git and uses the build
-// output at ~/.cache/npub/<repo>/build as a temporary work-tree (via git's
-// --git-dir and --work-tree options) when committing. This avoids copying
-// the site into a separate working copy.
+// Package deploy publishes the built site to a git remote. It keeps a local
+// repository at ~/.cache/npub/<repo>/git and uses the build output at
+// ~/.cache/npub/<repo>/build as a temporary work-tree (via git's --git-dir and
+// --work-tree options), so the site is never copied into a separate working
+// copy. It never clones the remote in full: by default it fetches only the
+// current branch tip (shallow) to commit onto.
+//
+// By default a deploy is non-destructive: it appends a commit onto the
+// remote's branch tip and pushes normally. With Options.Force it instead
+// builds a single root commit from the build output and force-pushes it,
+// replacing the remote's history with one revision — useful when the deploy
+// repo is pure transport and its history is not worth keeping.
 package deploy
 
 import (
@@ -52,11 +59,15 @@ func BuildDir(cacheDir string) string {
 	return filepath.Join(cacheDir, "build")
 }
 
-// GitDir returns the bare git subdirectory of cacheDir, where `npub deploy`
-// clones deploy_repo on first use.
+// GitDir returns the git subdirectory of cacheDir, where `npub deploy`
+// initializes a local repository on first use.
 func GitDir(cacheDir string) string {
 	return filepath.Join(cacheDir, "git")
 }
+
+// defaultBranch is the branch deploy pushes to when the remote is empty and
+// has no default branch of its own yet.
+const defaultBranch = "main"
 
 // RepoSlug derives a directory name from a git repository URL. It strips a
 // trailing ".git" and returns the final path component, suitable as a local
@@ -75,6 +86,10 @@ func RepoSlug(repoURL string) string {
 type Options struct {
 	Stdout io.Writer
 	Stderr io.Writer
+	// Force collapses the deploy to a single root commit and force-pushes it,
+	// replacing the remote's history. When false (the default), deploy appends
+	// a commit onto the remote's current branch tip and pushes normally.
+	Force bool
 }
 
 func (o Options) writers() (io.Writer, io.Writer) {
@@ -89,12 +104,12 @@ func (o Options) writers() (io.Writer, io.Writer) {
 	return out, errw
 }
 
-// Prepare ensures gitDir is a clone of repoURL and resets HEAD + index to
-// origin's default branch tip without touching buildDir's contents. On
-// first use it runs `git clone --bare`; on subsequent runs it fetches and
-// resets. After Prepare returns, the bare repository's index reflects
-// origin's last published state, so a subsequent `git add -A` against
-// buildDir stages exactly the diff that needs to be committed.
+// Prepare validates buildDir and ensures gitDir is a local repository wired to
+// repoURL as origin. On first use it runs `git init`; on subsequent runs it
+// verifies origin still points at repoURL. Unless opt.Force is set, it then
+// shallow-fetches the remote's current branch tip and positions HEAD there, so
+// the commit Commit builds lands as that tip's child. With opt.Force it skips
+// the fetch, leaving HEAD where it is so Commit can build a fresh root commit.
 func Prepare(repoURL, gitDir, buildDir string, opt Options) error {
 	if err := requireGit(); err != nil {
 		return err
@@ -111,10 +126,9 @@ func Prepare(repoURL, gitDir, buildDir string, opt Options) error {
 	if !info.IsDir() {
 		return fmt.Errorf("build path %s is not a directory", buildDir)
 	}
-	// Refuse to deploy from an empty build directory: with a clean tree
-	// reset to origin's last published state, `git add -A` would stage a
-	// deletion of every file in origin and commit a wipe-out. Force the
-	// user to rebuild instead.
+	// Refuse to deploy from an empty build directory: it would publish a
+	// single root commit containing nothing, wiping out the live site. Force
+	// the user to rebuild instead.
 	empty, err := dirHasNoContent(buildDir)
 	if err != nil {
 		return err
@@ -130,20 +144,21 @@ func Prepare(repoURL, gitDir, buildDir string, opt Options) error {
 		if err := os.MkdirAll(filepath.Dir(gitDir), 0o755); err != nil {
 			return fmt.Errorf("creating cache parent %s: %w", filepath.Dir(gitDir), err)
 		}
-		if err := runGit(stdout, stderr, "", "clone", "--bare", repoURL, gitDir); err != nil {
+		// Initialize a local repository instead of cloning: deploy only ever
+		// writes to origin, so there is nothing worth downloading.
+		if err := runGit(stdout, stderr, "", "init", "--bare", gitDir); err != nil {
 			_ = os.RemoveAll(gitDir)
-			return fmt.Errorf("cloning %s: %w", repoURL, err)
+			return fmt.Errorf("initializing %s: %w", gitDir, err)
 		}
-		// `git clone --bare` sets up the origin remote but no fetch refspec
-		// and no refs/remotes/origin/*. Add the standard refspec so future
-		// fetches mirror origin into refs/remotes/origin/*, which lets us
-		// distinguish origin's tip from our locally-committed branch.
-		if err := runGit(stdout, stderr, "", "--git-dir="+gitDir, "config", "remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*"); err != nil {
+		// Point HEAD at a deterministic branch and disable bareness so
+		// add/commit can operate against --work-tree.
+		if err := runGit(stdout, stderr, "", "--git-dir="+gitDir, "symbolic-ref", "HEAD", "refs/heads/"+defaultBranch); err != nil {
 			return err
 		}
-		// Disable bareness so add/commit will operate on --work-tree without
-		// refusing.
 		if err := runGit(stdout, stderr, "", "--git-dir="+gitDir, "config", "core.bare", "false"); err != nil {
+			return err
+		}
+		if err := runGit(stdout, stderr, "", "--git-dir="+gitDir, "remote", "add", "origin", repoURL); err != nil {
 			return err
 		}
 	} else {
@@ -152,24 +167,39 @@ func Prepare(repoURL, gitDir, buildDir string, opt Options) error {
 		}
 	}
 
+	if err := ensureCommitIdentity(gitDir); err != nil {
+		return err
+	}
 	if err := ensureGitExclude(gitDir, build.BuildMarkerName); err != nil {
 		return err
 	}
 
-	if err := runGit(stdout, stderr, "", "--git-dir="+gitDir, "fetch", "--prune", "origin"); err != nil {
-		return fmt.Errorf("fetching %s: %w", repoURL, err)
+	// In force mode we replace the remote outright, so there is nothing to
+	// fetch. Leave HEAD alone; Commit builds a parentless root commit.
+	if opt.Force {
+		return nil
 	}
 
-	branch, err := DefaultBranch(gitDir)
+	// Non-destructive deploy: fetch only the remote branch tip (shallow) and
+	// move HEAD onto it, so the commit Commit builds is its child and the push
+	// fast-forwards. An empty remote has no branch to fetch; leave HEAD unborn
+	// so the first deploy creates the branch.
+	branch, exists, err := remoteHead(gitDir)
 	if err != nil {
 		return err
 	}
-	// reset --mixed updates HEAD and the index, but leaves the work-tree
-	// (buildDir) alone so the next `git add -A` sees exactly the difference
-	// between origin and the build output.
-	if err := runGit(stdout, stderr, "", "--git-dir="+gitDir, "--work-tree="+buildDir,
-		"reset", "--mixed", "origin/"+branch); err != nil {
-		return fmt.Errorf("resetting to origin/%s: %w", branch, err)
+	if !exists {
+		return nil
+	}
+	if err := runGit(stdout, stderr, "", "--git-dir="+gitDir, "fetch", "--depth", "1", "origin", branch); err != nil {
+		return fmt.Errorf("fetching origin/%s: %w", branch, err)
+	}
+	tip, err := gitOutput("", "--git-dir="+gitDir, "rev-parse", "FETCH_HEAD")
+	if err != nil {
+		return fmt.Errorf("resolving origin/%s: %w", branch, err)
+	}
+	if err := runGit(stdout, stderr, "", "--git-dir="+gitDir, "update-ref", "HEAD", tip); err != nil {
+		return fmt.Errorf("positioning HEAD at origin/%s: %w", branch, err)
 	}
 	return nil
 }
@@ -204,57 +234,119 @@ func ensureGitExclude(gitDir, pattern string) error {
 	return nil
 }
 
-// Commit stages every change between origin and buildDir, then commits if
-// anything is staged. Returns true when a commit was created.
+// Commit captures the entire contents of buildDir as a new commit and points
+// HEAD at it. The index is rebuilt from scratch each time so files removed
+// since the last deploy drop out of the published tree. With opt.Force the
+// commit is a parentless root (collapsing history to one revision); otherwise
+// it is a child of the current HEAD (the remote tip Prepare positioned).
+// Returns false (no commit) when the build output matches HEAD's tree, so an
+// unchanged build is a no-op rather than an empty push.
 func Commit(gitDir, buildDir, message string, opt Options) (bool, error) {
 	if err := requireGit(); err != nil {
 		return false, err
 	}
 	stdout, stderr := opt.writers()
+	// Clear the index, then stage the whole build output, so the staged tree
+	// is exactly buildDir regardless of what the previous deploy left behind.
+	if err := runGit(stdout, stderr, "", "--git-dir="+gitDir, "read-tree", "--empty"); err != nil {
+		return false, fmt.Errorf("clearing index: %w", err)
+	}
 	if err := runGit(stdout, stderr, "", "--git-dir="+gitDir, "--work-tree="+buildDir, "add", "-A"); err != nil {
 		return false, fmt.Errorf("staging changes: %w", err)
 	}
-	out, err := gitOutput("", "--git-dir="+gitDir, "--work-tree="+buildDir, "status", "--porcelain")
+	tree, err := gitOutput("", "--git-dir="+gitDir, "write-tree")
 	if err != nil {
-		return false, fmt.Errorf("checking status: %w", err)
+		return false, fmt.Errorf("writing tree: %w", err)
 	}
-	if out == "" {
-		return false, nil
+
+	// commit-tree args: optionally parent the new commit on HEAD. In force mode
+	// we omit the parent to produce a root commit.
+	args := []string{"--git-dir=" + gitDir, "commit-tree", tree}
+	if parent, err := gitOutput("", "--git-dir="+gitDir, "rev-parse", "--verify", "--quiet", "HEAD"); err == nil {
+		if prevTree, err := gitOutput("", "--git-dir="+gitDir, "rev-parse", "--verify", "--quiet", "HEAD^{tree}"); err == nil && prevTree == tree {
+			return false, nil
+		}
+		if !opt.Force {
+			args = append(args, "-p", parent)
+		}
 	}
-	if err := runGit(stdout, stderr, "", "--git-dir="+gitDir, "--work-tree="+buildDir, "commit", "-m", message); err != nil {
+	args = append(args, "-m", message)
+
+	commit, err := gitOutput("", args...)
+	if err != nil {
 		return false, fmt.Errorf("creating commit: %w", err)
+	}
+	if err := runGit(stdout, stderr, "", "--git-dir="+gitDir, "update-ref", "HEAD", commit); err != nil {
+		return false, fmt.Errorf("updating HEAD: %w", err)
 	}
 	return true, nil
 }
 
-// Push pushes HEAD to origin, setting upstream so the first push against a
-// previously-empty repository succeeds.
+// Push publishes HEAD to origin's default branch. A normal deploy pushes
+// fast-forward; with opt.Force it force-pushes, replacing whatever the remote
+// held with the single root commit Commit built.
 func Push(gitDir string, opt Options) error {
 	if err := requireGit(); err != nil {
 		return err
 	}
 	stdout, stderr := opt.writers()
-	if err := runGit(stdout, stderr, "", "--git-dir="+gitDir, "push", "--set-upstream", "origin", "HEAD"); err != nil {
+	branch, err := remoteDefaultBranch(gitDir)
+	if err != nil {
+		return err
+	}
+	args := []string{"--git-dir=" + gitDir, "push"}
+	if opt.Force {
+		args = append(args, "--force")
+	}
+	args = append(args, "origin", "HEAD:refs/heads/"+branch)
+	if err := runGit(stdout, stderr, "", args...); err != nil {
 		return fmt.Errorf("pushing to origin: %w", err)
 	}
 	return nil
 }
 
-// DefaultBranch returns the name of the default branch tracked by gitDir.
-// `git clone --bare` initializes HEAD as a symref to refs/heads/<default>,
-// so the local symref tells us the branch name without an extra round-trip
-// to the remote.
-func DefaultBranch(gitDir string) (string, error) {
-	if out, err := gitOutput("", "--git-dir="+gitDir, "symbolic-ref", "--short", "HEAD"); err == nil && out != "" {
-		return out, nil
+// remoteHead asks origin which branch its HEAD points at and whether the
+// remote advertises one at all. deploy pushes to the branch the remote already
+// serves (e.g. main or gh-pages) rather than guessing. An empty remote
+// advertises no HEAD: exists is false and branch falls back to defaultBranch.
+func remoteHead(gitDir string) (branch string, exists bool, err error) {
+	out, err := gitOutput("", "--git-dir="+gitDir, "ls-remote", "--symref", "origin", "HEAD")
+	if err != nil {
+		return "", false, fmt.Errorf("querying remote default branch: %w", err)
 	}
-	if out, err := gitOutput("", "--git-dir="+gitDir, "symbolic-ref", "--short", "refs/remotes/origin/HEAD"); err == nil {
-		if i := strings.IndexByte(out, '/'); i >= 0 {
-			return out[i+1:], nil
+	// A non-empty remote prints a line like "ref: refs/heads/main\tHEAD".
+	for _, line := range strings.Split(out, "\n") {
+		rest, ok := strings.CutPrefix(strings.TrimSpace(line), "ref:")
+		if !ok {
+			continue
 		}
-		return out, nil
+		if fields := strings.Fields(rest); len(fields) > 0 {
+			return strings.TrimPrefix(fields[0], "refs/heads/"), true, nil
+		}
 	}
-	return "", errors.New("could not determine default branch (is the remote empty?)")
+	return defaultBranch, false, nil
+}
+
+// remoteDefaultBranch returns the branch deploy should push to, falling back
+// to defaultBranch for an empty remote.
+func remoteDefaultBranch(gitDir string) (string, error) {
+	branch, _, err := remoteHead(gitDir)
+	return branch, err
+}
+
+// ensureCommitIdentity sets a fallback committer identity on gitDir when none
+// is configured, so commit-tree succeeds in environments (such as CI) without
+// a global git identity. A configured identity at any scope is left untouched.
+func ensureCommitIdentity(gitDir string) error {
+	for key, fallback := range map[string]string{"user.email": "npub@localhost", "user.name": "npub"} {
+		if _, err := gitOutput("", "--git-dir="+gitDir, "config", key); err == nil {
+			continue
+		}
+		if err := runGit(io.Discard, io.Discard, "", "--git-dir="+gitDir, "config", key, fallback); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func verifyOrigin(gitDir, repoURL string) error {
