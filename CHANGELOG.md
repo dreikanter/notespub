@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-23
+
 ### Added
 
 - Add `npub deploy --force` to replace the deploy repo with a single root commit (force-push), discarding remote history. Useful when the deploy repo is pure transport whose history is not worth keeping.
