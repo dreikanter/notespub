@@ -108,9 +108,16 @@ var deployCmd = &cobra.Command{
 	Short: "Commit and push the built site to deploy_repo",
 	Long: `Commit the contents of the build directory to deploy_repo and push.
 
-deploy maintains a bare clone of deploy_repo at <cache_path>/git and uses
-<cache_path>/build (produced by npub build) as a temporary work-tree when
-committing. cache_path defaults to ~/.cache/npub/<repo>.
+deploy keeps a local repository at <cache_path>/git and uses
+<cache_path>/build (produced by npub build) as a temporary work-tree.
+cache_path defaults to ~/.cache/npub/<repo>. It never clones the remote in
+full: it fetches only the current branch tip to commit onto.
+
+By default deploy is non-destructive: it appends a commit onto the remote's
+default branch and pushes normally, preserving history. With --force it
+instead builds a single root commit from the build output and force-pushes
+it, replacing the remote's history with one revision. Use --force when the
+deploy repo is pure transport and its history is not worth keeping.
 
 deploy does not rebuild; run npub build first. An empty build directory
 is rejected so a partial or missing build cannot wipe the deployed site.
@@ -125,6 +132,8 @@ With --dry-run, deploy commits locally but skips the push.`,
 			return fmt.Errorf("deploy_repo is not set; add it to %s", config.DefaultConfigFile)
 		}
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
+		force, _ := cmd.Flags().GetBool("force")
+		opt := deploy.Options{Force: force}
 
 		cacheDir, err := resolveCacheDir(cfg)
 		if err != nil {
@@ -140,12 +149,12 @@ With --dry-run, deploy commits locally but skips the push.`,
 		gitDir := deploy.GitDir(cacheDir)
 
 		log.Printf("preparing %s", gitDir)
-		if err := deploy.Prepare(cfg.DeployRepo, gitDir, buildDir, deploy.Options{}); err != nil {
+		if err := deploy.Prepare(cfg.DeployRepo, gitDir, buildDir, opt); err != nil {
 			return err
 		}
 
 		message := fmt.Sprintf("Deploy %s", time.Now().UTC().Format(time.RFC3339))
-		committed, err := deploy.Commit(gitDir, buildDir, message, deploy.Options{})
+		committed, err := deploy.Commit(gitDir, buildDir, message, opt)
 		if err != nil {
 			return err
 		}
@@ -157,8 +166,12 @@ With --dry-run, deploy commits locally but skips the push.`,
 			log.Println("dry-run: skipping push")
 			return nil
 		}
-		log.Println("pushing")
-		if err := deploy.Push(gitDir, deploy.Options{}); err != nil {
+		if force {
+			log.Println("force-pushing single revision")
+		} else {
+			log.Println("pushing")
+		}
+		if err := deploy.Push(gitDir, opt); err != nil {
 			return err
 		}
 		log.Println("deploy complete")
@@ -598,6 +611,7 @@ func init() {
 	addConfigFlags(buildCmd)
 	addConfigFlags(configCmd)
 	deployCmd.Flags().Bool("dry-run", false, "commit locally but skip git push")
+	deployCmd.Flags().Bool("force", false, "replace the deploy repo with a single commit (force-push), discarding remote history")
 	clearCmd.Flags().Bool("dry-run", false, "print the managed build directory without removing it")
 
 	serveCmd.Flags().String("dir", "", "directory to serve (defaults to the deploy_repo cache build path)")
