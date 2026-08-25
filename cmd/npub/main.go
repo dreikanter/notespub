@@ -450,11 +450,10 @@ func loadConfigOpt(cmd *cobra.Command, cfgPath string) (config.Config, error) {
 // only needs cache_path/deploy_repo to resolve the managed build directory.
 func loadConfigForClear(cmd *cobra.Command, cfgPath string) (config.Config, error) {
 	cfg, _, err := loadConfig(cmd, cfgPath)
-	var missingRequired config.MissingRequiredError
-	if err != nil && !errors.As(err, &missingRequired) {
-		return cfg, err
+	if _, missingRequired := errors.AsType[config.MissingRequiredError](err); missingRequired {
+		return cfg, nil
 	}
-	return cfg, nil
+	return cfg, err
 }
 
 func clearBuildDir(buildDir string) (bool, error) {
