@@ -21,6 +21,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/dreikanter/npub/internal/build"
@@ -214,7 +215,7 @@ func ensureGitExclude(gitDir, pattern string) error {
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("reading git exclude %s: %w", excludePath, err)
 	}
-	for _, line := range strings.Split(string(data), "\n") {
+	for line := range strings.SplitSeq(string(data), "\n") {
 		if strings.TrimSpace(line) == pattern {
 			return nil
 		}
@@ -316,7 +317,7 @@ func remoteHead(gitDir string) (branch string, exists bool, err error) {
 		return "", false, fmt.Errorf("querying remote default branch: %w", err)
 	}
 	// A non-empty remote prints a line like "ref: refs/heads/main\tHEAD".
-	for _, line := range strings.Split(out, "\n") {
+	for line := range strings.SplitSeq(out, "\n") {
 		rest, ok := strings.CutPrefix(strings.TrimSpace(line), "ref:")
 		if !ok {
 			continue
@@ -425,9 +426,9 @@ func dirHasNoContent(dir string) (bool, error) {
 
 func lastNonEmptyLine(s string) string {
 	lines := strings.Split(strings.TrimRight(s, "\n"), "\n")
-	for i := len(lines) - 1; i >= 0; i-- {
-		if line := strings.TrimSpace(lines[i]); line != "" {
-			return line
+	for _, line := range slices.Backward(lines) {
+		if trimmed := strings.TrimSpace(line); trimmed != "" {
+			return trimmed
 		}
 	}
 	return ""
