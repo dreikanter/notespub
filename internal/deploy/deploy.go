@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -118,7 +119,7 @@ func Prepare(repoURL, gitDir, buildDir string, opt Options) error {
 
 	info, err := os.Stat(buildDir)
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			return fmt.Errorf("build directory %s does not exist; run `npub build` first", buildDir)
 		}
 		return fmt.Errorf("checking %s: %w", buildDir, err)
@@ -138,7 +139,7 @@ func Prepare(repoURL, gitDir, buildDir string, opt Options) error {
 	}
 
 	if _, err := os.Stat(gitDir); err != nil {
-		if !os.IsNotExist(err) {
+		if !errors.Is(err, fs.ErrNotExist) {
 			return fmt.Errorf("checking %s: %w", gitDir, err)
 		}
 		if err := os.MkdirAll(filepath.Dir(gitDir), 0o755); err != nil {
@@ -210,7 +211,7 @@ func ensureGitExclude(gitDir, pattern string) error {
 		return fmt.Errorf("creating git exclude directory %s: %w", filepath.Dir(excludePath), err)
 	}
 	data, err := os.ReadFile(excludePath)
-	if err != nil && !os.IsNotExist(err) {
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("reading git exclude %s: %w", excludePath, err)
 	}
 	for _, line := range strings.Split(string(data), "\n") {

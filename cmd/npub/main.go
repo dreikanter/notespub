@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"net"
 	"net/http"
@@ -368,7 +369,7 @@ func initConfig(path string) (string, error) {
 
 	info, err := os.Stat(path)
 	if err != nil {
-		if !os.IsNotExist(err) {
+		if !errors.Is(err, fs.ErrNotExist) {
 			return "", err
 		}
 		if err := os.MkdirAll(path, 0o755); err != nil {
@@ -381,7 +382,7 @@ func initConfig(path string) (string, error) {
 	cfgPath := filepath.Join(path, config.DefaultConfigFile)
 	file, err := os.OpenFile(cfgPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
 	if err != nil {
-		if os.IsExist(err) {
+		if errors.Is(err, fs.ErrExist) {
 			return "", fmt.Errorf("config file already exists: %q", cfgPath)
 		}
 		return "", fmt.Errorf("cannot create config file %q: %w", cfgPath, err)
@@ -470,7 +471,7 @@ func clearBuildDir(buildDir string) (bool, error) {
 func checkClearableBuildDir(buildDir string) (bool, error) {
 	info, err := os.Stat(buildDir)
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			return false, nil
 		}
 		return false, fmt.Errorf("checking build directory %s: %w", buildDir, err)
@@ -484,7 +485,7 @@ func checkClearableBuildDir(buildDir string) (bool, error) {
 	}
 	if len(entries) > 0 {
 		if _, err := os.Stat(filepath.Join(buildDir, build.BuildMarkerName)); err != nil {
-			if os.IsNotExist(err) {
+			if errors.Is(err, fs.ErrNotExist) {
 				return false, fmt.Errorf("refusing to clear %s: directory is not marked as an npub build directory", buildDir)
 			}
 			return false, fmt.Errorf("checking build marker: %w", err)
@@ -564,7 +565,7 @@ func rejectSymlinkedPath(path string) error {
 	if err == nil && info.Mode()&os.ModeSymlink != 0 {
 		return fmt.Errorf("refusing to clear symlinked path: %s", path)
 	}
-	if err != nil && !os.IsNotExist(err) {
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("checking path %s: %w", path, err)
 	}
 	return nil

@@ -2,6 +2,7 @@ package build
 
 import (
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"html/template"
 	"io"
@@ -136,7 +137,7 @@ func cleanBuildDir(buildPath string) error {
 
 	entries, err := os.ReadDir(abs)
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			return nil
 		}
 		return fmt.Errorf("reading build dir: %w", err)
@@ -160,7 +161,7 @@ func faviconDataURI(svg []byte) template.URL {
 // copyStaticFiles copies all files from staticPath to buildPath, preserving
 // directory structure. Returns nil if staticPath does not exist.
 func copyStaticFiles(staticPath, buildPath string) error {
-	if _, err := os.Stat(staticPath); os.IsNotExist(err) {
+	if _, err := os.Stat(staticPath); errors.Is(err, fs.ErrNotExist) {
 		return nil
 	}
 	return filepath.WalkDir(staticPath, func(path string, d fs.DirEntry, err error) error {
@@ -211,7 +212,7 @@ func RemoveStaleTempBuildDirs(buildPath string) error {
 
 	entries, err := os.ReadDir(parent)
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			return nil
 		}
 		return fmt.Errorf("reading build parent directory: %w", err)
@@ -259,7 +260,7 @@ func AtomicBuild(store note.Store, cfg config.Config, buildPath string, assets A
 	oldPath := filepath.Join(parent, filepath.Base(buildPath)+".old-"+strings.TrimPrefix(filepath.Base(tmpPath), prefix))
 	movedOld := false
 	if err := os.Rename(buildPath, oldPath); err != nil {
-		if !os.IsNotExist(err) {
+		if !errors.Is(err, fs.ErrNotExist) {
 			return fmt.Errorf("moving previous build directory aside: %w", err)
 		}
 	} else {
