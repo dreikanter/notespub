@@ -191,3 +191,79 @@ func TestExpandPath(t *testing.T) {
 		})
 	}
 }
+
+func TestSiteRootPathAndDomain(t *testing.T) {
+	tests := []struct {
+		name     string
+		url      string
+		rootPath string
+		domain   string
+		feedPath string
+	}{
+		{
+			name:     "domain only",
+			url:      "https://example.com",
+			rootPath: "/",
+			domain:   "example.com",
+			feedPath: "/feed.xml",
+		},
+		{
+			name:     "domain with trailing slash",
+			url:      "https://example.com/",
+			rootPath: "/",
+			domain:   "example.com",
+			feedPath: "/feed.xml",
+		},
+		{
+			name:     "subpath",
+			url:      "https://example.com/blog",
+			rootPath: "/blog",
+			domain:   "example.com",
+			feedPath: "/blog/feed.xml",
+		},
+		{
+			name:     "subpath with trailing slash",
+			url:      "https://example.com/blog/",
+			rootPath: "/blog",
+			domain:   "example.com",
+			feedPath: "/blog/feed.xml",
+		},
+		{
+			name:     "nested subpath",
+			url:      "https://example.com/a/b",
+			rootPath: "/a/b",
+			domain:   "example.com",
+			feedPath: "/a/b/feed.xml",
+		},
+		{
+			name:     "host with port",
+			url:      "http://localhost:4000/blog",
+			rootPath: "/blog",
+			domain:   "localhost:4000",
+			feedPath: "/blog/feed.xml",
+		},
+		{
+			name:     "no scheme falls back to the raw value",
+			url:      "example.com/blog",
+			rootPath: "/",
+			domain:   "example.com/blog",
+			feedPath: "/feed.xml",
+		},
+		{
+			name:     "empty",
+			url:      "",
+			rootPath: "/",
+			domain:   "",
+			feedPath: "/feed.xml",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := Config{SiteRootURL: tt.url}
+			assert.Equal(t, tt.rootPath, cfg.SiteRootPath(), "SiteRootPath")
+			assert.Equal(t, tt.domain, cfg.SiteDomain(), "SiteDomain")
+			assert.Equal(t, tt.feedPath, cfg.FeedPath(), "FeedPath")
+		})
+	}
+}

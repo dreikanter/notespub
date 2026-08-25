@@ -38,34 +38,28 @@ type Config struct {
 
 // SiteRootPath returns the URL path component of SiteRootURL.
 func (c Config) SiteRootPath() string {
-	idx := strings.Index(c.SiteRootURL, "://")
-	if idx < 0 {
+	_, rest, ok := strings.Cut(c.SiteRootURL, "://")
+	if !ok {
 		return "/"
 	}
-	rest := c.SiteRootURL[idx+3:]
-	slash := strings.IndexByte(rest, '/')
-	if slash < 0 {
+	_, path, ok := strings.Cut(rest, "/")
+	if !ok {
 		return "/"
 	}
-	p := rest[slash:]
-	p = strings.TrimRight(p, "/")
-	if p == "" {
-		return "/"
+	if p := strings.TrimRight("/"+path, "/"); p != "" {
+		return p
 	}
-	return p
+	return "/"
 }
 
 // SiteDomain returns the domain (host) component of SiteRootURL.
 func (c Config) SiteDomain() string {
-	idx := strings.Index(c.SiteRootURL, "://")
-	if idx < 0 {
+	_, rest, ok := strings.Cut(c.SiteRootURL, "://")
+	if !ok {
 		return c.SiteRootURL
 	}
-	rest := c.SiteRootURL[idx+3:]
-	if slash := strings.IndexByte(rest, '/'); slash >= 0 {
-		return rest[:slash]
-	}
-	return rest
+	host, _, _ := strings.Cut(rest, "/")
+	return host
 }
 
 // FeedURL returns the full feed URL.
