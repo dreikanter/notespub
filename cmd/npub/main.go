@@ -494,6 +494,13 @@ func checkClearableBuildDir(buildDir string) (bool, error) {
 	return true, nil
 }
 
+// namedPath pairs a path with the config field it came from, so refusals can
+// name what the clear target collided with.
+type namedPath struct {
+	name string
+	path string
+}
+
 func validateClearTarget(buildDir, cacheDir string, cfg config.Config) error {
 	if buildDir == "" {
 		return fmt.Errorf("refusing to clear empty build path")
@@ -519,10 +526,7 @@ func validateClearTarget(buildDir, cacheDir string, cfg config.Config) error {
 		return err
 	}
 
-	important := []struct {
-		name string
-		path string
-	}{
+	important := []namedPath{
 		{name: "cache_path", path: cacheDir},
 		{name: "deploy git directory", path: deploy.GitDir(cacheDir)},
 		{name: "notes_path", path: cfg.NotesPath},
@@ -530,31 +534,24 @@ func validateClearTarget(buildDir, cacheDir string, cfg config.Config) error {
 		{name: "static_path", path: cfg.StaticPath},
 	}
 	if home, err := os.UserHomeDir(); err == nil {
-		important = append(important, struct {
-			name string
-			path string
-		}{name: "home directory", path: home})
+		important = append(important, namedPath{name: "home directory", path: home})
 	}
 	if cwd, err := os.Getwd(); err == nil {
-		important = append(important, struct {
-			name string
-			path string
-		}{name: "current working directory", path: cwd})
+		important = append(important, namedPath{name: "current working directory", path: cwd})
 	}
 	for _, entry := range important {
-		name, path := entry.name, entry.path
-		if path == "" {
+		if entry.path == "" {
 			continue
 		}
-		absPath, err := filepath.Abs(path)
+		absPath, err := filepath.Abs(entry.path)
 		if err != nil {
-			return fmt.Errorf("resolving %s: %w", name, err)
+			return fmt.Errorf("resolving %s: %w", entry.name, err)
 		}
 		if sameAbsPath(absBuild, absPath) {
-			return fmt.Errorf("refusing to clear %s: it is the %s", absBuild, name)
+			return fmt.Errorf("refusing to clear %s: it is the %s", absBuild, entry.name)
 		}
 		if isAncestor(absBuild, absPath) {
-			return fmt.Errorf("refusing to clear %s: it contains the %s %s", absBuild, name, absPath)
+			return fmt.Errorf("refusing to clear %s: it contains the %s %s", absBuild, entry.name, absPath)
 		}
 	}
 	return nil
