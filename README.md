@@ -4,7 +4,7 @@ A static site builder for Markdown notes. Reads notes from a local directory, re
 
 ## Prerequisites
 
-- Go 1.25+
+- Go 1.27+
 - Node.js (for Tailwind CSS)
 
 ## Install

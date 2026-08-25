@@ -80,3 +80,31 @@ func TestRenderImageCallback(t *testing.T) {
 	assert.True(t, called)
 	assert.Contains(t, string(html), `src="abc123.jpg"`)
 }
+
+func TestRenderNoteLinkOnlyRewritesBareDecimals(t *testing.T) {
+	noteIndex := map[int]string{8823: "some-slug"}
+	for _, dest := range []string{"+8823", "-8823", "8823x", "08823x", "8_823", "https://example.com/8823"} {
+		t.Run(dest, func(t *testing.T) {
+			html, err := Render("See [this note]("+dest+")\n", noteIndex, nil)
+			require.NoError(t, err)
+			assert.NotContains(t, string(html), `href="/some-slug"`)
+		})
+	}
+}
+
+func TestIsExternalURL(t *testing.T) {
+	for _, tt := range []struct {
+		src  string
+		want bool
+	}{
+		{"https://example.com/a.jpg", true},
+		{"http://example.com/a.jpg", true},
+		{"http://a", true},
+		{"a.jpg", false},
+		{"/local/a.jpg", false},
+		{"ftp://example.com/a.jpg", false},
+		{"", false},
+	} {
+		assert.Equal(t, tt.want, isExternalURL(tt.src), tt.src)
+	}
+}

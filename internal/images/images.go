@@ -154,11 +154,11 @@ func nameFromDisposition(rawURL string) string {
 	if disp == "" {
 		return ""
 	}
-	parts := strings.SplitN(disp, "filename=", 2)
-	if len(parts) < 2 {
+	_, name, ok := strings.Cut(disp, "filename=")
+	if !ok {
 		return ""
 	}
-	return parts[1]
+	return name
 }
 
 func (c *Cache) indexPath() string {

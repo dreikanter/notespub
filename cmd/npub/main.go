@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"net"
 	"net/http"
@@ -368,7 +369,7 @@ func initConfig(path string) (string, error) {
 
 	info, err := os.Stat(path)
 	if err != nil {
-		if !os.IsNotExist(err) {
+		if !errors.Is(err, fs.ErrNotExist) {
 			return "", err
 		}
 		if err := os.MkdirAll(path, 0o755); err != nil {
@@ -381,7 +382,7 @@ func initConfig(path string) (string, error) {
 	cfgPath := filepath.Join(path, config.DefaultConfigFile)
 	file, err := os.OpenFile(cfgPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
 	if err != nil {
-		if os.IsExist(err) {
+		if errors.Is(err, fs.ErrExist) {
 			return "", fmt.Errorf("config file already exists: %q", cfgPath)
 		}
 		return "", fmt.Errorf("cannot create config file %q: %w", cfgPath, err)
@@ -450,11 +451,10 @@ func loadConfigOpt(cmd *cobra.Command, cfgPath string) (config.Config, error) {
 // only needs cache_path/deploy_repo to resolve the managed build directory.
 func loadConfigForClear(cmd *cobra.Command, cfgPath string) (config.Config, error) {
 	cfg, _, err := loadConfig(cmd, cfgPath)
-	var missingRequired config.MissingRequiredError
-	if err != nil && !errors.As(err, &missingRequired) {
-		return cfg, err
+	if _, missingRequired := errors.AsType[config.MissingRequiredError](err); missingRequired {
+		return cfg, nil
 	}
-	return cfg, nil
+	return cfg, err
 }
 
 func clearBuildDir(buildDir string) (bool, error) {
@@ -471,7 +471,7 @@ func clearBuildDir(buildDir string) (bool, error) {
 func checkClearableBuildDir(buildDir string) (bool, error) {
 	info, err := os.Stat(buildDir)
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			return false, nil
 		}
 		return false, fmt.Errorf("checking build directory %s: %w", buildDir, err)
@@ -485,13 +485,20 @@ func checkClearableBuildDir(buildDir string) (bool, error) {
 	}
 	if len(entries) > 0 {
 		if _, err := os.Stat(filepath.Join(buildDir, build.BuildMarkerName)); err != nil {
-			if os.IsNotExist(err) {
+			if errors.Is(err, fs.ErrNotExist) {
 				return false, fmt.Errorf("refusing to clear %s: directory is not marked as an npub build directory", buildDir)
 			}
 			return false, fmt.Errorf("checking build marker: %w", err)
 		}
 	}
 	return true, nil
+}
+
+// namedPath pairs a path with the config field it came from, so refusals can
+// name what the clear target collided with.
+type namedPath struct {
+	name string
+	path string
 }
 
 func validateClearTarget(buildDir, cacheDir string, cfg config.Config) error {
@@ -519,10 +526,7 @@ func validateClearTarget(buildDir, cacheDir string, cfg config.Config) error {
 		return err
 	}
 
-	important := []struct {
-		name string
-		path string
-	}{
+	important := []namedPath{
 		{name: "cache_path", path: cacheDir},
 		{name: "deploy git directory", path: deploy.GitDir(cacheDir)},
 		{name: "notes_path", path: cfg.NotesPath},
@@ -530,31 +534,24 @@ func validateClearTarget(buildDir, cacheDir string, cfg config.Config) error {
 		{name: "static_path", path: cfg.StaticPath},
 	}
 	if home, err := os.UserHomeDir(); err == nil {
-		important = append(important, struct {
-			name string
-			path string
-		}{name: "home directory", path: home})
+		important = append(important, namedPath{name: "home directory", path: home})
 	}
 	if cwd, err := os.Getwd(); err == nil {
-		important = append(important, struct {
-			name string
-			path string
-		}{name: "current working directory", path: cwd})
+		important = append(important, namedPath{name: "current working directory", path: cwd})
 	}
 	for _, entry := range important {
-		name, path := entry.name, entry.path
-		if path == "" {
+		if entry.path == "" {
 			continue
 		}
-		absPath, err := filepath.Abs(path)
+		absPath, err := filepath.Abs(entry.path)
 		if err != nil {
-			return fmt.Errorf("resolving %s: %w", name, err)
+			return fmt.Errorf("resolving %s: %w", entry.name, err)
 		}
 		if sameAbsPath(absBuild, absPath) {
-			return fmt.Errorf("refusing to clear %s: it is the %s", absBuild, name)
+			return fmt.Errorf("refusing to clear %s: it is the %s", absBuild, entry.name)
 		}
 		if isAncestor(absBuild, absPath) {
-			return fmt.Errorf("refusing to clear %s: it contains the %s %s", absBuild, name, absPath)
+			return fmt.Errorf("refusing to clear %s: it contains the %s %s", absBuild, entry.name, absPath)
 		}
 	}
 	return nil
@@ -565,7 +562,7 @@ func rejectSymlinkedPath(path string) error {
 	if err == nil && info.Mode()&os.ModeSymlink != 0 {
 		return fmt.Errorf("refusing to clear symlinked path: %s", path)
 	}
-	if err != nil && !os.IsNotExist(err) {
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("checking path %s: %w", path, err)
 	}
 	return nil

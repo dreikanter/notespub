@@ -17,9 +17,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/dreikanter/npub/internal/build"
@@ -118,7 +120,7 @@ func Prepare(repoURL, gitDir, buildDir string, opt Options) error {
 
 	info, err := os.Stat(buildDir)
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			return fmt.Errorf("build directory %s does not exist; run `npub build` first", buildDir)
 		}
 		return fmt.Errorf("checking %s: %w", buildDir, err)
@@ -138,7 +140,7 @@ func Prepare(repoURL, gitDir, buildDir string, opt Options) error {
 	}
 
 	if _, err := os.Stat(gitDir); err != nil {
-		if !os.IsNotExist(err) {
+		if !errors.Is(err, fs.ErrNotExist) {
 			return fmt.Errorf("checking %s: %w", gitDir, err)
 		}
 		if err := os.MkdirAll(filepath.Dir(gitDir), 0o755); err != nil {
@@ -210,10 +212,10 @@ func ensureGitExclude(gitDir, pattern string) error {
 		return fmt.Errorf("creating git exclude directory %s: %w", filepath.Dir(excludePath), err)
 	}
 	data, err := os.ReadFile(excludePath)
-	if err != nil && !os.IsNotExist(err) {
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("reading git exclude %s: %w", excludePath, err)
 	}
-	for _, line := range strings.Split(string(data), "\n") {
+	for line := range strings.SplitSeq(string(data), "\n") {
 		if strings.TrimSpace(line) == pattern {
 			return nil
 		}
@@ -315,7 +317,7 @@ func remoteHead(gitDir string) (branch string, exists bool, err error) {
 		return "", false, fmt.Errorf("querying remote default branch: %w", err)
 	}
 	// A non-empty remote prints a line like "ref: refs/heads/main\tHEAD".
-	for _, line := range strings.Split(out, "\n") {
+	for line := range strings.SplitSeq(out, "\n") {
 		rest, ok := strings.CutPrefix(strings.TrimSpace(line), "ref:")
 		if !ok {
 			continue
@@ -424,9 +426,9 @@ func dirHasNoContent(dir string) (bool, error) {
 
 func lastNonEmptyLine(s string) string {
 	lines := strings.Split(strings.TrimRight(s, "\n"), "\n")
-	for i := len(lines) - 1; i >= 0; i-- {
-		if line := strings.TrimSpace(lines[i]); line != "" {
-			return line
+	for _, line := range slices.Backward(lines) {
+		if trimmed := strings.TrimSpace(line); trimmed != "" {
+			return trimmed
 		}
 	}
 	return ""

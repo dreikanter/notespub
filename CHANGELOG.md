@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-08-25
+
+### Changed
+
+- Require Go 1.27 or newer to build from source (was Go 1.25) ([#103]).
+- Pin the local lint command to `golangci-lint` v2.13.1, the first release that can type-check Go 1.27 sources ([#103]).
+
+[#103]: https://github.com/dreikanter/npub/pull/103
+
 ## [0.3.1] - 2026-08-19
 
 ### Changed

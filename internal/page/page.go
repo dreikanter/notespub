@@ -2,9 +2,10 @@ package page
 
 import (
 	"fmt"
+	"maps"
 	"net/url"
 	"path"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 )
@@ -46,8 +47,8 @@ func (p NotePage) CanonicalPath() string {
 }
 
 func SortNotePages(pages []NotePage) {
-	sort.Slice(pages, func(i, j int) bool {
-		return pages[i].PublishedAt.After(pages[j].PublishedAt)
+	slices.SortFunc(pages, func(a, b NotePage) int {
+		return b.PublishedAt.Compare(a.PublishedAt)
 	})
 }
 
@@ -74,11 +75,8 @@ func RelatedTo(pages []NotePage, target NotePage) []NotePage {
 func TaggedPages(pages []NotePage, tag string) []NotePage {
 	var result []NotePage
 	for _, p := range pages {
-		for _, t := range p.Tags {
-			if t == tag {
-				result = append(result, p)
-				break
-			}
+		if slices.Contains(p.Tags, tag) {
+			result = append(result, p)
 		}
 	}
 	return result
@@ -91,12 +89,7 @@ func AllTags(pages []NotePage) []string {
 			seen[t] = struct{}{}
 		}
 	}
-	tags := make([]string, 0, len(seen))
-	for t := range seen {
-		tags = append(tags, t)
-	}
-	sort.Strings(tags)
-	return tags
+	return slices.Sorted(maps.Keys(seen))
 }
 
 type RedirectPage struct {

@@ -1,7 +1,9 @@
 package deploy
 
 import (
+	"errors"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -90,7 +92,7 @@ func TestPrepareRefusesEmptyBuildDir(t *testing.T) {
 	// gitDir was never touched: no destructive clone happened against
 	// repoURL because we bailed before touching the network.
 	_, statErr := os.Stat(gitDir)
-	assert.True(t, os.IsNotExist(statErr), "gitDir should not have been created")
+	assert.True(t, errors.Is(statErr, fs.ErrNotExist), "gitDir should not have been created")
 }
 
 func TestPrepareRefusesMissingBuildDir(t *testing.T) {
