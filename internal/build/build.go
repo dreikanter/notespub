@@ -11,7 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -531,7 +531,7 @@ func warnDuplicateSlugs(pages []page.NotePage) {
 			dupes = append(dupes, slug)
 		}
 	}
-	sort.Strings(dupes)
+	slices.Sort(dupes)
 	for _, slug := range dupes {
 		log.Printf("warning: duplicate slug %q used by notes %s", slug, strings.Join(uidsBySlug[slug], ", "))
 	}
