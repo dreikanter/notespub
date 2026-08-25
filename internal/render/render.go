@@ -71,11 +71,10 @@ func Render(source string, noteIndex map[int]string, processImage ProcessImageFu
 
 		switch node := n.(type) {
 		case *ast.Link:
-			dest := string(node.Destination)
-			if isNoteID(dest) && noteIndex != nil {
-				id, err := strconv.Atoi(dest)
-				if err == nil {
-					if resolved, ok := noteIndex[id]; ok {
+			if noteIndex != nil {
+				// A bare decimal destination such as [text](8823) is a note ID.
+				if id, err := strconv.ParseUint(string(node.Destination), 10, 0); err == nil {
+					if resolved, ok := noteIndex[int(id)]; ok {
 						node.Destination = []byte("/" + resolved)
 					}
 				}
@@ -105,14 +104,8 @@ func Render(source string, noteIndex map[int]string, processImage ProcessImageFu
 	return buf.Bytes(), nil
 }
 
-var noteIDPattern = regexp.MustCompile(`^\d+$`)
-
-func isNoteID(s string) bool {
-	return noteIDPattern.MatchString(s)
-}
-
 func isExternalURL(s string) bool {
-	return len(s) > 8 && (s[:8] == "https://" || s[:7] == "http://")
+	return strings.HasPrefix(s, "https://") || strings.HasPrefix(s, "http://")
 }
 
 // HighlightCSS returns Chroma CSS for both the light and dark themes, scoped
